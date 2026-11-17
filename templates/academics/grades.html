@@ -3,6 +3,11 @@
 {% block content %}
 <h1>Оценки и зачёты</h1>
 <p class="context">{{ profile.display_name }} · группа {{ profile.base_group.code }}</p>
+<nav class="view-switch" aria-label="Разделы учёбы">
+  <a href="{% url 'grades' %}" class="active" aria-current="page">Оценки</a>
+  <a href="{% url 'exams' %}">Экзамены</a>
+  <a href="{% url 'deadlines' %}">Дедлайны</a>
+</nav>
 {% if grades %}
 <ul class="entries">
   {% for g in grades %}

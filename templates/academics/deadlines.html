@@ -2,6 +2,11 @@
 {% block title %}Дедлайны — Деканат{% endblock %}
 {% block content %}
 <h1>Дедлайны</h1>
+<nav class="view-switch" aria-label="Разделы учёбы">
+  <a href="{% url 'grades' %}">Оценки</a>
+  <a href="{% url 'exams' %}">Экзамены</a>
+  <a href="{% url 'deadlines' %}" class="active" aria-current="page">Дедлайны</a>
+</nav>
 {% if deadlines %}
 <ul class="entries">
   {% for d in deadlines %}

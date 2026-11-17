@@ -11,4 +11,8 @@
   <dt>Языковая группа</dt><dd>{{ profile.language_group }}</dd>
   <dt>Специализация</dt><dd>{{ profile.specialization|default:"—" }}</dd>
 </dl>
+<form method="post" action="{% url 'logout' %}">
+  {% csrf_token %}
+  <button type="submit">Выйти</button>
+</form>
 {% endblock %}
