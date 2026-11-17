@@ -17,7 +17,7 @@
     <a href="{% url 'grades' %}" {% if '/grades' in request.path or '/exams' in request.path or '/deadlines' in request.path %}class="active" aria-current="page"{% endif %}>Учёба</a>
     <a href="{% url 'request_list' %}" {% if '/requests' in request.path %}class="active" aria-current="page"{% endif %}>Заявки</a>
     <a href="{% url 'profile' %}" {% if '/profile' in request.path %}class="active" aria-current="page"{% endif %}>Профиль</a>
-    <a class="bell" href="{% url 'notifications' %}" aria-label="Уведомления" {% if '/notifications' in request.path %}aria-current="page"{% endif %}>
+    <a class="bell{% if '/notifications' in request.path %} active{% endif %}" href="{% url 'notifications' %}" aria-label="Уведомления" {% if '/notifications' in request.path %}aria-current="page"{% endif %}>
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
     </a>
     <form method="post" action="{% url 'logout' %}" class="inline-form">{% csrf_token %}
@@ -29,7 +29,7 @@
 <p class="disclaimer">Конкурсный концепт. Не является официальным сервисом вуза. Все данные вымышлены.</p>
 <main id="main">
   {% if messages %}
-    {% for message in messages %}<p class="message {{ message.tags }}" role="status">{{ message }}</p>{% endfor %}
+    {% for message in messages %}<p class="message {{ message.tags }}" {% if message.tags == 'error' or message.tags == 'warning' %}role="alert"{% else %}role="status"{% endif %}>{{ message }}</p>{% endfor %}
   {% endif %}
   {% block content %}{% endblock %}
 </main>

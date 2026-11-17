@@ -38,6 +38,7 @@ button[type=submit], .button { font: inherit; }
 button[type=submit] { padding: .6rem 1rem; background: var(--accent); color: #fff; border: none; border-radius: .5rem; cursor: pointer; min-height: 44px; }
 .error { color: var(--danger); font-weight: 600; }
 .errorlist { color: var(--danger); margin: .25rem 0; padding-left: 1rem; }
+.errorlist li::before { content: "⚠ "; }
 .message { padding: .6rem .8rem; border-radius: .5rem; border: 1px solid var(--line); background: #fff; }
 .message.error, .message.warning { border-color: var(--danger); color: var(--danger); }
 .message.success { border-color: #2e6b34; color: #2e6b34; }
