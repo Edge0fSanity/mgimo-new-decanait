@@ -7,6 +7,7 @@ DEMO_STUDENT_B_PASSWORD; если не заданы — генерируются
 записываются в gitignored файл .secrets/demo_passwords.txt (в stdout печатается
 только путь, не сам пароль). Повторный запуск не удаляет и не сбрасывает заявки.
 """
+import os
 import secrets
 from datetime import timedelta
 from pathlib import Path
@@ -210,8 +211,11 @@ class Command(BaseCommand):
 
         # Служебный аккаунт staff (не superuser): заявки, объявления, дедлайны; без оценок.
         staff, created = User.objects.get_or_create(username="demo_staff", defaults={"is_staff": True})
-        if created:
-            staff.set_password(_password("DEMO_STAFF_PASSWORD", "demo_staff"))
+        staff_pw = os.environ.get("DEMO_STAFF_PASSWORD")
+        if created or staff_pw:
+            # Пароль задаётся при создании и обновляется, если пароль пришёл из env.
+            staff.set_password(staff_pw or _password("DEMO_STAFF_PASSWORD", "demo_staff"))
+            staff.is_staff = True
             staff.save()
         staff.user_permissions.set(
             Permission.objects.filter(

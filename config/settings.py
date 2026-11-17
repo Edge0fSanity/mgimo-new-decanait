@@ -100,7 +100,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Личные файлы раздаются только через защищённые Django view, не по прямому /media/ URL.
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
