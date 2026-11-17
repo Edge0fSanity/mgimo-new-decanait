@@ -14,7 +14,7 @@ export DJANGO_DEBUG=1
 export DEMO_STUDENT_A_PASSWORD=$(grep '^demo_a=' /home/nikita/Projects/mgimo_new_decanait/.secrets/demo_passwords.txt | cut -d= -f2)
 export DEMO_STUDENT_B_PASSWORD=$(grep '^demo_b=' /home/nikita/Projects/mgimo_new_decanait/.secrets/demo_passwords.txt | cut -d= -f2)
 export DEMO_STAFF_PASSWORD=$(grep '^demo_staff=' /home/nikita/Projects/mgimo_new_decanait/.secrets/demo_passwords.txt | cut -d= -f2)
-uv run python manage.py migrate -q --noinput
+uv run python manage.py migrate --noinput
 uv run python manage.py seed_demo > /dev/null
 echo "WORKTREE=$WT"
 exec uv run python manage.py runserver "127.0.0.1:$PORT" --noreload
