@@ -34,11 +34,12 @@ class StudentRequest(models.Model):
 
     def save(self, *args, **kwargs):
         # public_number строится от pk: первый проход сохраняет, второй присваивает номер.
-        if not self.public_number and self.pk is None:
-            super().save(*args, **kwargs)
+        # kwargs вызывающего не затираются; номер присваивается и записи без pk-прохода (напр. из admin).
+        needs_number = not self.public_number
+        super().save(*args, **kwargs)
+        if needs_number:
             self.public_number = f"{self.get_type_display()[:3].upper()}-{self.submitted_at:%Y}-{self.pk:04d}"
-            kwargs = {"update_fields": ["public_number"]}
-        return super().save(*args, **kwargs)
+            super().save(update_fields=["public_number"])
 
     def __str__(self):
         return f"{self.public_number} ({self.get_type_display()})"

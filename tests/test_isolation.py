@@ -47,6 +47,15 @@ class IsolationTests(BaseTestCase):
         obj.refresh_from_db()
         self.assertEqual(obj.status, StudentRequest.Status.SUBMITTED)
 
+    def test_save_preserves_caller_kwargs_and_assigns_number(self):
+        # Запись без номера (напр. созданная в admin) получает номер при первом сохранении.
+        obj = StudentRequest.objects.create(owner=self.user_a, type=StudentRequest.Type.APPLICATION, content="Текст")
+        obj.public_number = ""
+        obj.save()
+        self.assertTrue(obj.public_number.startswith("ЗАЯ-"))
+        obj.refresh_from_db()
+        self.assertTrue(obj.public_number.startswith("ЗАЯ-"))
+
     def test_profiles_are_isolated(self):
         client_b = self.login(self.user_b)
         response = client_b.get(reverse("profile"))
