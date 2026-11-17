@@ -1,0 +1,11 @@
+{
+  "name": "Django app (uv)",
+  "kind": "django",
+  "bootstrap": ["uv sync"],
+  "build": [],
+  "test": ["uv run python manage.py test"],
+  "start": "uv run python manage.py runserver 0.0.0.0:8000",
+  "port": 8000,
+  "readinessPath": "/",
+  "evidence": ["Detected manage.py", "Detected pyproject.toml", "uv-managed venv: plain python lacks django"]
+}
