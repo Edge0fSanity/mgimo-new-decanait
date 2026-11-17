@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.academics",
     "apps.requests_app",
+    "apps.communications",
+    "apps.dashboard",
 ]
 
 MIDDLEWARE = [
@@ -95,6 +97,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Личные файлы раздаются только через защищённые Django view, не по прямому /media/ URL.
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

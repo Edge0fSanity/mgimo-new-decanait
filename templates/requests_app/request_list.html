@@ -2,7 +2,10 @@
 {% block title %}Заявки — Деканат{% endblock %}
 {% block content %}
 <h1>Мои заявки</h1>
-<p><a class="button" href="{% url 'request_create' %}">Новая заявка</a></p>
+<p>
+  <a class="button" href="{% url 'request_create' %}">Новая справка</a>
+  <a class="button" href="{% url 'request_create_kind' 'zayavlenie' %}">Новое заявление</a>
+</p>
 {% if requests %}
 <ul class="requests">
   {% for r in requests %}

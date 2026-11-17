@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
 
-from .models import ScheduleEntry
+from .models import Deadline, Exam, Grade, ScheduleEntry
 
 DAY_TITLES = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
@@ -69,3 +69,32 @@ def schedule(request):
             "profile": profile,
         },
     )
+
+
+@login_required
+def grades(request):
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    return render(
+        request,
+        "academics/grades.html",
+        {"grades": profile.grades.select_related("subject"), "profile": profile},
+    )
+
+
+@login_required
+def exams(request):
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    return render(
+        request,
+        "academics/exams.html",
+        {"exams": profile.exams.select_related("subject"), "profile": profile},
+    )
+
+
+@login_required
+def deadlines(request):
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    items = Deadline.objects.filter(Q(group=profile.base_group) | Q(student=profile)).filter(
+        due_at__gte=timezone.now()
+    )
+    return render(request, "academics/deadlines.html", {"deadlines": items, "profile": profile})

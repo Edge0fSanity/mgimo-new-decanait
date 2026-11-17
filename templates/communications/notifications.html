@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Уведомления — Деканат{% endblock %}
+{% block content %}
+<h1>Уведомления</h1>
+{% if notifications %}
+<ul class="entries">
+  {% for n in notifications %}
+  <li class="entry{% if not n.read_at %} rescheduled{% endif %}">
+    <span class="subject">{{ n.title }}</span>
+    <span class="meta">{{ n.created_at|date:"d.m.Y H:i" }} · {% if n.read_at %}прочитано {{ n.read_at|date:"d.m.Y H:i" }}{% else %}не прочитано{% endif %}</span>
+    {% if n.target_url %}<p><a href="{{ n.target_url }}">Открыть</a></p>{% endif %}
+    {% if not n.read_at %}
+    <form method="post" action="{% url 'notification_read' n.pk %}">
+      {% csrf_token %}<button type="submit">Отметить прочитанным</button>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="empty">Уведомлений нет</p>{% endif %}
+{% endblock %}

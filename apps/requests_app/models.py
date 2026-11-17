@@ -2,6 +2,27 @@ from django.conf import settings
 from django.db import models, transaction
 
 
+class DemoDocument(models.Model):
+    """Документ-образец: скачивается только владельцем через Django view, не по /media/ URL."""
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="documents"
+    )
+    request = models.ForeignKey(
+        "StudentRequest", null=True, blank=True, on_delete=models.SET_NULL, related_name="documents"
+    )
+    title = models.CharField("Название", max_length=200)
+    file = models.FileField(upload_to="documents/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Документ-образец"
+        verbose_name_plural = "Документы-образцы"
+
+    def __str__(self):
+        return self.title
+
+
 class StudentRequest(models.Model):
     class Type(models.TextChoices):
         CERTIFICATE = "certificate", "Справка"

@@ -36,6 +36,6 @@ class SeedPasswordFallbackTests(BaseTestCase):
                     path = os.path.join(tmp, ".secrets", "demo_passwords.txt")
                     with open(path, encoding="utf-8") as f:
                         lines = dict(l.strip().split("=", 1) for l in f if "=" in l)
-            self.assertEqual(set(lines), {"demo_a", "demo_b"})
+            self.assertEqual(set(lines), {"demo_a", "demo_b", "demo_staff"})
             self.assertTrue(self.client.login(username="demo_a", password=lines["demo_a"]))
             self.assertTrue(self.client.login(username="demo_b", password=lines["demo_b"]))

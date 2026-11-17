@@ -5,10 +5,11 @@ from apps.requests_app.models import StudentRequest
 from .base import BaseTestCase
 
 
-def create_request(client, **overrides):
-    data = {"type": "certificate", "purpose": "Военный учебный центр", "content": ""}
+def create_request(client, kind="spravka", **overrides):
+    data = {"purpose": "Военный учебный центр", "content": ""}
     data.update(overrides)
-    return client.post(reverse("request_create"), data)
+    url = reverse("request_create") if kind == "spravka" else reverse("request_create_kind", args=[kind])
+    return client.post(url, data)
 
 
 class IsolationTests(BaseTestCase):
@@ -25,7 +26,7 @@ class IsolationTests(BaseTestCase):
 
     def test_a_gets_404_on_b_request(self):
         client_b = self.login(self.user_b)
-        create_request(client_b, type="application", purpose="", content="Прошу перевести меня")
+        create_request(client_b, kind="zayavlenie", purpose="", content="Прошу перевести меня")
         request_b = self.user_b.requests.get()
         client_a = self.login(self.user_a)
         self.assertEqual(client_a.get(reverse("request_detail", args=[request_b.pk])).status_code, 404)

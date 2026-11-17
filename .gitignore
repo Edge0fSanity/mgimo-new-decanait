@@ -2,6 +2,7 @@ staticfiles/
 .env
 .secrets/
 db.sqlite3
+media/
 *.sqlite3
 .venv/
 __pycache__/

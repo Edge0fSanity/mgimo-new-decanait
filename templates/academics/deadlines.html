@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Дедлайны — Деканат{% endblock %}
+{% block content %}
+<h1>Дедлайны</h1>
+{% if deadlines %}
+<ul class="entries">
+  {% for d in deadlines %}
+  <li class="entry">
+    <span class="subject">{{ d.title }}</span>
+    <span class="time">до {{ d.due_at|date:"d.m.Y H:i" }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="empty">Активных дедлайнов нет</p>{% endif %}
+{% endblock %}

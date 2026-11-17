@@ -17,4 +17,12 @@
   <li class="empty">Событий пока нет</li>
   {% endfor %}
 </ul>
+{% if obj.documents.all %}
+<h2>Документы</h2>
+<ul class="events">
+  {% for d in obj.documents.all %}
+  <li><a href="{% url 'document_download' d.pk %}">{{ d.title }}</a> — образец, недействителен</li>
+  {% endfor %}
+</ul>
+{% endif %}
 {% endblock %}

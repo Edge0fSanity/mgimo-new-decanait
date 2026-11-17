@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Экзамены — Деканат{% endblock %}
+{% block content %}
+<h1>Экзамены и сессия</h1>
+<p class="context">{{ profile.display_name }} · группа {{ profile.base_group.code }}</p>
+{% if exams %}
+<ul class="entries">
+  {% for e in exams %}
+  <li class="entry">
+    <span class="subject">{{ e.subject }}</span>
+    <span class="time">{{ e.scheduled_at|date:"d.m.Y H:i" }}</span>
+    <span class="meta">{{ e.get_status_display }}{% if e.result %} · {{ e.result }}{% endif %}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="empty">Экзамены не назначены</p>{% endif %}
+{% endblock %}

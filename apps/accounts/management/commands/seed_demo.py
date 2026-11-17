@@ -12,13 +12,16 @@ from datetime import timedelta
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
-from apps.academics.models import Group, ScheduleEntry, Subject
-from apps.requests_app.models import RequestStatusEvent, StudentRequest
+from apps.academics.models import Deadline, Exam, Grade, Group, ScheduleEntry, Subject
+from apps.communications.models import Announcement, Notification
+from apps.requests_app.models import DemoDocument, RequestStatusEvent, StudentRequest
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 
@@ -117,7 +120,8 @@ class Command(BaseCommand):
 
         # Одна демо-заявка у A, только если у него ещё нет ни одной.
         a = users["demo_a"]
-        if not StudentRequest.objects.filter(owner=a).exists():
+        req = StudentRequest.objects.filter(owner=a).first()
+        if not req:
             req = StudentRequest.objects.create(
                 owner=a,
                 type=StudentRequest.Type.CERTIFICATE,
@@ -128,4 +132,95 @@ class Command(BaseCommand):
                 request=req, to_status=req.status, actor=a, note="Демо-заявка при seed"
             )
             self.stdout.write(f"Создана демо-заявка {req.public_number}")
+
+        # Оценки/зачёты/сессия: у A и B разные значения.
+        profiles = {username: StudentProfile.objects.get(user=u) for username, u in users.items()}
+        grade_plan = {
+            "demo_a": [
+                ("Микроэкономика", Grade.Status.RECORDED, "5", "Аттестация 1 модуля"),
+                ("Иностранный язык", Grade.Status.CREDIT, "зачёт", "Аттестация 1 модуля"),
+                ("Математический анализ", Grade.Status.DEBT, "", "Сессия 1 семестра"),
+            ],
+            "demo_b": [
+                ("Микроэкономика", Grade.Status.RECORDED, "4", "Аттестация 1 модуля"),
+                ("Иностранный язык", Grade.Status.CREDIT, "зачёт", "Аттестация 1 модуля"),
+                ("Математический анализ", Grade.Status.NOT_ENTERED, "", "Сессия 1 семестра"),
+            ],
+        }
+        for username, rows in grade_plan.items():
+            for subject_title, status, value, source in rows:
+                Grade.objects.get_or_create(
+                    student=profiles[username],
+                    subject=subjects[subject_title],
+                    source_label=source,
+                    defaults={"status": status, "value": value},
+                )
+        exam_at = monday + timedelta(days=7, hours=10)
+        for username in ("demo_a", "demo_b"):
+            Exam.objects.get_or_create(
+                student=profiles[username],
+                subject=subjects["Математический анализ"],
+                scheduled_at=exam_at,
+                defaults={"status": Exam.Status.SCHEDULED},
+            )
+        self.stdout.write("Оценки и экзамены готовы")
+
+        # Дедлайны: один на группу, один персональный у A.
+        Deadline.objects.get_or_create(
+            group=group,
+            title="Заявление на пересдачу — приём до конца недели",
+            defaults={"due_at": monday + timedelta(days=4, hours=18)},
+        )
+        Deadline.objects.get_or_create(
+            student=profiles["demo_a"],
+            title="Справка в ВУЦ — до четверга",
+            defaults={"due_at": monday + timedelta(days=3, hours=18)},
+        )
+
+        # Объявление и уведомления (read_at остаётся пустым — студент прочитает сам).
+        announcement, _ = Announcement.objects.get_or_create(
+            title="Приём заявлений на пересдачу открыт",
+            defaults={
+                "body": "Подавайте заявление через личный кабинет до конца недели.",
+                "audience": Announcement.Audience.ALL,
+            },
+        )
+        if req:
+            Notification.objects.get_or_create(
+                recipient=a,
+                kind="status",
+                title=f"Заявка {req.public_number} принята",
+                defaults={"target_url": f"/requests/{req.pk}/"},
+            )
+        Notification.objects.get_or_create(
+            recipient=users["demo_b"],
+            kind="announcement",
+            title=announcement.title,
+            defaults={"target_url": "/"},
+        )
+
+        # Документ-образец к демо-заявке A: только через защищённый view, с пометкой «недействителен».
+        if req and not DemoDocument.objects.filter(owner=a, request=req).exists():
+            html = (
+                "<html><body><h1>ОБРАЗЕЦ — документ недействителен</h1>"
+                f"<p>Справка {req.public_number} для {profiles['demo_a'].display_name}.</p>"
+                "<p>Это демонстрационный образец конкурсного концепта, юридической силы не имеет.</p></body></html>"
+            )
+            doc = DemoDocument(owner=a, request=req, title="Образец справки")
+            doc.file.save("demo_spravka_obrazec.html", ContentFile(html), save=True)
+
+        # Служебный аккаунт staff (не superuser): заявки, объявления, дедлайны; без оценок.
+        staff, created = User.objects.get_or_create(username="demo_staff", defaults={"is_staff": True})
+        if created:
+            staff.set_password(_password("DEMO_STAFF_PASSWORD", "demo_staff"))
+            staff.save()
+        staff.user_permissions.set(
+            Permission.objects.filter(
+                codename__in=[
+                    "view_studentrequest", "change_studentrequest",
+                    "add_announcement", "change_announcement", "view_announcement",
+                    "view_deadline",
+                ]
+            )
+        )
         self.stdout.write(self.style.SUCCESS("Seed завершён (идемпотентно)"))

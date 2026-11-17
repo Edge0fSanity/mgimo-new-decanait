@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Главная — Деканат{% endblock %}
+{% block content %}
+<h1>Здравствуйте, {{ profile.display_name }}</h1>
+<section class="entry">
+  <h2>Ближайшая пара</h2>
+  {% if next_entry %}
+    <p><span class="time">{{ next_entry.starts_at|date:"d.m H:i" }}–{{ next_entry.ends_at|date:"H:i" }}</span>
+    <span class="subject">{{ next_entry.subject }}</span>
+    <span class="meta">{{ next_entry.room }} · {{ next_entry.teacher }}</span></p>
+  {% else %}<p class="empty">Ближайших занятий нет</p>{% endif %}
+</section>
+<section class="entry">
+  <h2>Ближайший дедлайн</h2>
+  {% if deadline %}
+    <p>{{ deadline.title }} — <span class="time">до {{ deadline.due_at|date:"d.m.Y H:i" }}</span></p>
+  {% else %}<p class="empty">Активных дедлайнов нет</p>{% endif %}
+</section>
+<section class="entry">
+  <h2>Моя активная заявка</h2>
+  {% if active_request %}
+    <p><a href="{% url 'request_detail' active_request.pk %}">{{ active_request.public_number }}</a>
+    · {{ active_request.get_type_display }} · {{ active_request.get_status_display }}</p>
+  {% else %}<p class="empty">Активных заявок нет</p>{% endif %}
+</section>
+<section class="entry">
+  <h2>Объявления</h2>
+  {% if announcements %}
+    <ul class="requests">
+      {% for a in announcements %}<li><strong>{{ a.title }}</strong> — {{ a.body }}</li>{% endfor %}
+    </ul>
+  {% else %}<p class="empty">Объявлений нет</p>{% endif %}
+</section>
+{% endblock %}

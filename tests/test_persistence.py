@@ -1,9 +1,11 @@
 import os
+import tempfile
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.db import connection
+from django.test import override_settings
 from django.urls import reverse
 
 from apps.academics.models import ScheduleEntry
@@ -12,6 +14,7 @@ from apps.requests_app.models import StudentRequest
 from .base import TEST_PASSWORD, BaseTestCase
 
 
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class PersistenceTests(BaseTestCase):
     def test_request_survives_relogin_and_restart(self):
         client = self.login(self.user_a)
@@ -35,7 +38,7 @@ class PersistenceTests(BaseTestCase):
         client.post(reverse("request_create"), {"type": "certificate", "purpose": "Моя заявка"})
         user_request = self.user_a.requests.get()
 
-        env = {"DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD, "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD}
+        env = {"DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD, "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD, "DEMO_STAFF_PASSWORD": TEST_PASSWORD}
         with mock.patch.dict(os.environ, env):
             call_command("seed_demo", verbosity=0)
             schedule_count = ScheduleEntry.objects.count()
@@ -50,7 +53,7 @@ class PersistenceTests(BaseTestCase):
         self.assertTrue(client.login(username="demo_a", password=TEST_PASSWORD))
 
     def test_seed_gives_different_schedules(self):
-        env = {"DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD, "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD}
+        env = {"DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD, "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD, "DEMO_STAFF_PASSWORD": TEST_PASSWORD}
         with mock.patch.dict(os.environ, env):
             call_command("seed_demo", verbosity=0)
         a = get_user_model().objects.get(username="demo_a")

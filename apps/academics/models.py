@@ -54,3 +54,94 @@ class ScheduleEntry(models.Model):
 
     def __str__(self):
         return f"{self.subject} {self.starts_at:%d.%m %H:%M}"
+
+
+class Grade(models.Model):
+    """Оценка/зачёт. Никакого выдуманного рейтинга — только записи деканата."""
+
+    class Status(models.TextChoices):
+        RECORDED = "recorded", "Оценка выставлена"
+        NOT_ENTERED = "not_entered", "Оценка не введена"
+        CREDIT = "credit", "Зачёт"
+        DEBT = "debt", "Задолженность"
+
+    student = models.ForeignKey(
+        "accounts.StudentProfile", on_delete=models.CASCADE, related_name="grades"
+    )
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    value = models.CharField("Оценка", max_length=32, blank=True)
+    status = models.CharField(
+        "Статус", max_length=16, choices=Status.choices, default=Status.RECORDED
+    )
+    source_label = models.CharField("Период/источник", max_length=120, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Оценка"
+        verbose_name_plural = "Оценки"
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["student", "subject", "source_label"], name="uniq_grade"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.student}: {self.subject} — {self.value or self.get_status_display()}"
+
+
+class Exam(models.Model):
+    """Экзамен сессии: дата и результат."""
+
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Назначен"
+        PASSED = "passed", "Сдан"
+        DEBT = "debt", "Задолженность"
+
+    student = models.ForeignKey(
+        "accounts.StudentProfile", on_delete=models.CASCADE, related_name="exams"
+    )
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    scheduled_at = models.DateTimeField("Дата экзамена")
+    result = models.CharField("Результат", max_length=32, blank=True)
+    status = models.CharField(
+        "Статус", max_length=16, choices=Status.choices, default=Status.SCHEDULED
+    )
+
+    class Meta:
+        verbose_name = "Экзамен"
+        verbose_name_plural = "Экзамены"
+        ordering = ["scheduled_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["student", "subject", "scheduled_at"], name="uniq_exam"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.student}: {self.subject} {self.scheduled_at:%d.%m.%Y}"
+
+
+class Deadline(models.Model):
+    """Срок: для группы или персональный (ровно один из двух)."""
+
+    group = models.ForeignKey(
+        Group, null=True, blank=True, on_delete=models.CASCADE, related_name="deadlines"
+    )
+    student = models.ForeignKey(
+        "accounts.StudentProfile",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="deadlines",
+    )
+    title = models.CharField("Что сдать", max_length=200)
+    due_at = models.DateTimeField("Срок")
+
+    class Meta:
+        verbose_name = "Дедлайн"
+        verbose_name_plural = "Дедлайны"
+        ordering = ["due_at"]
+
+    def __str__(self):
+        return self.title
