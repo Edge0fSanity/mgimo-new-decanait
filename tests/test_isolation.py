@@ -39,6 +39,13 @@ class IsolationTests(BaseTestCase):
         self.assertEqual(obj.owner, self.user_b)
         self.assertEqual(obj.status, StudentRequest.Status.SUBMITTED)
 
+    def test_type_spoofing_ignored(self):
+        # Тип задаёт URL: подменённое в POST значение игнорируется.
+        client = self.login(self.user_a)
+        create_request(client, type="application")
+        obj = self.user_a.requests.get()
+        self.assertEqual(obj.type, StudentRequest.Type.CERTIFICATE)
+
     def test_student_cannot_change_status_via_post(self):
         client = self.login(self.user_a)
         create_request(client)

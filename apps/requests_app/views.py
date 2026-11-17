@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
@@ -7,7 +8,10 @@ from .forms import RequestForm
 from .models import DemoDocument, RequestStatusEvent, StudentRequest
 
 # Две формы заявки: тип задаёт URL, не студент.
-KIND_BY_SLUG = {"spravka": StudentRequest.Type.CERTIFICATE, "zayavlenie": StudentRequest.Type.APPLICATION}
+KINDS = {
+    "spravka": (StudentRequest.Type.CERTIFICATE, "Новая справка"),
+    "zayavlenie": (StudentRequest.Type.APPLICATION, "Новое заявление"),
+}
 
 
 @login_required
@@ -19,9 +23,9 @@ def request_list(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def request_create(request, kind="spravka"):
-    type_value = KIND_BY_SLUG.get(kind)
-    if type_value is None:
+    if kind not in KINDS:
         raise Http404
+    type_value, title = KINDS[kind]
     if request.method == "POST":
         form = RequestForm(type_value, request.POST)
         if form.is_valid():
@@ -30,18 +34,19 @@ def request_create(request, kind="spravka"):
             obj.owner = request.user
             obj.type = type_value
             obj.status = StudentRequest.Status.SUBMITTED
-            obj.save()
-            RequestStatusEvent.objects.create(
-                request=obj, to_status=obj.status, actor=request.user, note="Заявка подана студентом"
-            )
+            # Заявка и первая запись истории сохраняются атомарно.
+            with transaction.atomic():
+                obj.save()
+                RequestStatusEvent.objects.create(
+                    request=obj, to_status=obj.status, actor=request.user, note="Заявка подана студентом"
+                )
             return redirect("request_detail", pk=obj.pk)
     else:
         form = RequestForm(type_value)
-    titles = {"spravka": "Новая справка", "zayavlenie": "Новое заявление"}
     return render(
         request,
         "requests_app/request_form.html",
-        {"form": form, "kind": kind, "title": titles[kind]},
+        {"form": form, "kind": kind, "title": title},
     )
 
 

@@ -42,7 +42,6 @@ def home(request):
         .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
         .order_by("-published_at")[:3]
     )
-    unread = Notification.objects.filter(recipient=request.user, read_at__isnull=True).count()
     return render(
         request,
         "dashboard/home.html",
@@ -52,6 +51,5 @@ def home(request):
             "deadline": deadline,
             "active_request": active_request,
             "announcements": announcements,
-            "unread": unread,
         },
     )

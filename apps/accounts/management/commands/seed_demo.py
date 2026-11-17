@@ -185,13 +185,12 @@ class Command(BaseCommand):
                 "audience": Announcement.Audience.ALL,
             },
         )
-        if req:
-            Notification.objects.get_or_create(
-                recipient=a,
-                kind="status",
-                title=f"Заявка {req.public_number} принята",
-                defaults={"target_url": f"/requests/{req.pk}/"},
-            )
+        Notification.objects.get_or_create(
+            recipient=a,
+            kind="status",
+            target_url=f"/requests/{req.pk}/",
+            defaults={"title": f"Заявка {req.public_number} принята"},
+        )
         Notification.objects.get_or_create(
             recipient=users["demo_b"],
             kind="announcement",
