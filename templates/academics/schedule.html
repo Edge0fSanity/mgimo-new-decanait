@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Деканат{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="context">{{ profile.display_name }} · группа {{ profile.base_group.code }} · языковая {{ profile.language_group }}</p>
+<nav class="view-switch">
+  <a href="/" {% if view == 'today' %}class="active"{% endif %}>Сегодня</a>
+  <a href="/schedule/?view=week" {% if view == 'week' %}class="active"{% endif %}>Неделя</a>
+</nav>
+{% for day in days %}
+  <section class="day">
+    <h2>{{ day.title }}{% if day.is_today %} (сегодня){% endif %}, {{ day.date|date:"d.m.Y" }}</h2>
+    {% if day.entries %}
+      <ul class="entries">
+        {% for e in day.entries %}
+        <li class="entry{% if e.old_starts_at %} rescheduled{% endif %}">
+          <span class="time">{{ e.starts_at|date:"H:i" }}–{{ e.ends_at|date:"H:i" }}</span>
+          <span class="subject">{{ e.subject }}</span>
+          <span class="meta">{{ e.room }} · {{ e.teacher }}</span>
+          {% if e.old_starts_at %}
+            <span class="change">Перенос: было {{ e.old_starts_at|date:"d.m H:i" }} ({{ e.old_room }}) → стало {{ e.starts_at|date:"d.m H:i" }} ({{ e.room }}). {{ e.change_reason }} ({{ e.change_source_role }})</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">Занятий нет</p>
+    {% endif %}
+  </section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.public_number }} — Деканат{% endblock %}
+{% block content %}
+<h1>Заявка {{ obj.public_number }}</h1>
+<dl class="profile">
+  <dt>Тип</dt><dd>{{ obj.get_type_display }}</dd>
+  <dt>Статус</dt><dd>{{ obj.get_status_display }}</dd>
+  <dt>Подана</dt><dd>{{ obj.submitted_at|date:"d.m.Y H:i" }}</dd>
+  {% if obj.purpose %}<dt>Куда предоставляется</dt><dd>{{ obj.purpose }}</dd>{% endif %}
+  {% if obj.content %}<dt>Текст</dt><dd>{{ obj.content }}</dd>{% endif %}
+</dl>
+<h2>История статусов</h2>
+<ul class="events">
+  {% for ev in events %}
+  <li>{{ ev.created_at|date:"d.m.Y H:i" }}: {{ ev.get_to_status_display }}{% if ev.note %} — {{ ev.note }}{% endif %}</li>
+  {% empty %}
+  <li class="empty">Событий пока нет</li>
+  {% endfor %}
+</ul>
+{% endblock %}

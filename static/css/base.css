@@ -1,0 +1,36 @@
+:root { --ink: #1a2a4a; --accent: #1a3a6b; --line: #d8dee9; --bg: #f7f8fa; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+main { padding: 0 1rem 2rem; max-width: 60rem; margin: 0 auto; }
+.site-header { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; padding: .75rem 1rem; background: #fff; border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; color: var(--accent); }
+.site-nav { display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: center; }
+.site-nav a { color: var(--ink); text-decoration: none; padding: .35rem .5rem; border-radius: .25rem; }
+.site-nav a.active, .site-nav a:hover { background: #e8edf5; }
+.disclaimer { margin: .5rem 1rem; font-size: .8rem; color: #5a6478; }
+.inline-form { display: inline; }
+.link-button { background: none; border: none; color: var(--ink); cursor: pointer; padding: .35rem .5rem; font: inherit; }
+.link-button:hover { background: #e8edf5; border-radius: .25rem; }
+h1 { color: var(--accent); }
+.day h2 { font-size: 1rem; border-bottom: 1px solid var(--line); padding-bottom: .25rem; }
+.entries { list-style: none; padding: 0; display: grid; gap: .5rem; }
+.entry { background: #fff; border: 1px solid var(--line); border-radius: .5rem; padding: .6rem .8rem; display: grid; gap: .15rem; }
+.entry.rescheduled { border-left: 4px solid var(--accent); }
+.time { font-weight: 600; }
+.meta { color: #5a6478; font-size: .9rem; }
+.change { font-size: .85rem; color: var(--accent); }
+.empty { color: #5a6478; font-style: italic; }
+.context { color: #5a6478; }
+.view-switch { display: flex; gap: .5rem; margin: .75rem 0; }
+.view-switch a { padding: .4rem .8rem; border: 1px solid var(--line); border-radius: .5rem; text-decoration: none; color: var(--ink); background: #fff; }
+.view-switch a.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.profile dt { font-weight: 600; margin-top: .5rem; }
+.profile dd { margin: 0 0 .25rem; }
+.requests, .events { padding-left: 1.25rem; }
+.requests li { margin: .4rem 0; }
+.button { display: inline-block; padding: .5rem .9rem; background: var(--accent); color: #fff; border-radius: .5rem; text-decoration: none; }
+button[type=submit], .button { font: inherit; }
+button[type=submit] { padding: .5rem 1rem; background: var(--accent); color: #fff; border: none; border-radius: .5rem; cursor: pointer; }
+.error { color: #8a1c1c; font-weight: 600; }
+input, textarea { font: inherit; max-width: 100%; }
+label { font-weight: 600; }

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Заявки — Деканат{% endblock %}
+{% block content %}
+<h1>Мои заявки</h1>
+<p><a class="button" href="{% url 'request_create' %}">Новая заявка</a></p>
+{% if requests %}
+<ul class="requests">
+  {% for r in requests %}
+  <li>
+    <a href="{% url 'request_detail' r.pk %}">
+      {{ r.public_number }} · {{ r.get_type_display }} · {{ r.get_status_display }} · от {{ r.submitted_at|date:"d.m.Y H:i" }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">Заявок пока нет</p>
+{% endif %}
+{% endblock %}
