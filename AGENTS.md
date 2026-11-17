@@ -8,13 +8,35 @@
 
 КОНЕЦ ДОПОЛНЕНИЯ
 
-# Состояние репозитория (проверено 17.11.2026)
+# Состояние репозитория (проверено 17.11.2026, после A02)
 
-Git инициализирован (ветка master), коммитов ещё нет. В репозитории только README.md, AGENTS.md и docs/ (ADR, AI_TASKS, ARCHITECTURE, BACKLOG, PRD, PROMPT_LOG, QA, REPO_GUIDE, SUBMISSION, UI_SPEC). Каталогов app|apps/, config/, sources/, evidence/, .sync/ и файлов manage.py, pyproject.toml, lock-файлов пока нет — не ссылаться на них как на существующие.
+Django-монолит создан и работает: Python 3.12.14, Django 5.2.19 (uv.lock), SQLite, Argon2, серверные сессии. Ветка master, коммиты A01 (`fd5c570`…`4bd4fa0`), аудит-фиксы (`d1bdfc0`), A02 (`f1cb0e4`) и review-фиксы (`386843b`, `57337db`). Структура: config/ (settings/urls), apps/accounts|academics|requests_app|communications|dashboard, templates/, static/, tests/, evidence/prompts/, manage.py, pyproject.toml + uv.lock. Dockerfile/compose.yaml/.sync/ ещё нет — не ссылаться как на существующие.
 
-Кода и менеджера зависимостей нет, поэтому проверенных команд запуска/тестов пока не существует. Планируемые первые команды (docs/REPO_GUIDE.md §3, пример, не доказательство выполнения): установка зависимостей через uv → `python manage.py check` → `python manage.py migrate` → seed двух демо-аккаунтов management-командой → `python manage.py test` (или pytest) → `python manage.py runserver`. Считать их действующими только после того, как A01 реально создаст проект и они будут запущены.
+## Команды (проверены фактически)
 
-Целевая структура первого коммита — docs/REPO_GUIDE.md §1 (config/, apps/accounts|academics|requests_app|communications|dashboard, templates/, static/, tests/, evidence/, scripts/, .env.example, pyproject.toml + uv.lock, Dockerfile, compose.yaml). Имена каталогов согласовать с ARCHITECTURE при первом коммите; смена layout — только через ADR.
+    uv sync
+    uv run python manage.py check
+    uv run python manage.py migrate
+    uv run python manage.py seed_demo      # идемпотентно; пароли из env DEMO_STUDENT_A_PASSWORD / DEMO_STUDENT_B_PASSWORD / DEMO_STAFF_PASSWORD, иначе генерируются в gitignored .secrets/demo_passwords.txt
+    uv run python manage.py test tests     # 26 тестов: OK
+    uv run python manage.py runserver 0.0.0.0:8000
+
+Верификация Hermes: `hermes verify --json` (рецепт в .hermes/environment.json — обязательно `uv run`, автодетект берёт системный Python без Django).
+
+## Конвенции кода (наблюдаемые)
+
+- Личный контент фильтруется по `request.user`; профиль получать только `get_object_or_404(StudentProfile, user=request.user)` — не `request.user.student_profile` (иначе 500 у пользователя без профиля).
+- owner/status/type заявки задаёт только сервер (из `request.user` и URL); тип формы — URL `/requests/new/` (справка) и `/requests/new/zayavlenie/`, поле `type` в форме required=False.
+- Явные колонки вместо произвольного JSON (ARCHITECTURE §4); reason обязательна при rejected.
+- Негативный IDOR-тест на каждый новый объект; `MEDIA_ROOT` не раздаётся по прямому /media/ URL — только защищённые view.
+- Тесты seed задают все три пароля через env, иначе пишут случайные в реальный `.secrets/`.
+
+## Подводные камни
+
+- `manage.py shell -c` не принимает позиционные аргументы — передавать значения через env-переменные.
+- Повторный seed с изменёнными занятиями: перенос моделируется строкой с old_starts_at/old_room, не правкой starts_at (иначе IntegrityError по уникальному индексу).
+- `.env`, `.secrets/`, `db.sqlite3`, `media/`, `staticfiles/` — в .gitignore; секреты — только env сервера.
+- Не выполнено: деплой и доступ из РФ (A05), браузерная проверка 360 px и скриншоты (A03), формальный PASS D-Q03–D-Q07 (A04), rate limiting логина (отложен на A05).
 
 # 
 
