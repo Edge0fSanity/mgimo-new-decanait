@@ -29,7 +29,7 @@ class SeedPasswordFallbackTests(BaseTestCase):
 
     def test_generated_passwords_work_and_are_written_once(self):
         with tempfile.TemporaryDirectory() as tmp:
-            env = {k: "" for k in ("DEMO_STUDENT_A_PASSWORD", "DEMO_STUDENT_B_PASSWORD")}
+            env = {k: "" for k in ("DEMO_STUDENT_A_PASSWORD", "DEMO_STUDENT_B_PASSWORD", "DEMO_STAFF_PASSWORD")}
             with mock.patch.dict(os.environ, env, clear=False):
                 with mock.patch("apps.accounts.management.commands.seed_demo.BASE_DIR", Path(tmp)):
                     call_command("seed_demo", verbosity=0)
