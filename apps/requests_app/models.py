@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 
 class StudentRequest(models.Model):
@@ -36,10 +36,11 @@ class StudentRequest(models.Model):
         # public_number строится от pk: первый проход сохраняет, второй присваивает номер.
         # kwargs вызывающего не затираются; номер присваивается и записи без pk-прохода (напр. из admin).
         needs_number = not self.public_number
-        super().save(*args, **kwargs)
-        if needs_number:
-            self.public_number = f"{self.get_type_display()[:3].upper()}-{self.submitted_at:%Y}-{self.pk:04d}"
-            super().save(update_fields=["public_number"])
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if needs_number:
+                self.public_number = f"{self.get_type_display()[:3].upper()}-{self.submitted_at:%Y}-{self.pk:04d}"
+                super().save(update_fields=["public_number"])
 
     def __str__(self):
         return f"{self.public_number} ({self.get_type_display()})"

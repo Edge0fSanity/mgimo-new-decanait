@@ -83,7 +83,9 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = env("DJANGO_SESSION_COOKIE_SECURE", "False").lower() in ("1", "true", "yes")
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Доверять X-Forwarded-Proto только за собственным прокси (Caddy на A05); иначе клиент подделает заголовок.
+if env("DJANGO_TRUST_PROXY_SSL", "False").lower() in ("1", "true", "yes"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 LANGUAGE_CODE = "ru"
 TIME_ZONE = env("DJANGO_TIME_ZONE", "Europe/Moscow")
@@ -92,6 +94,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

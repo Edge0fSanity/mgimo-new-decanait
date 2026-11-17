@@ -1,18 +1,19 @@
 from datetime import timedelta
 
-from django.db.models import Q
-from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+
+from apps.accounts.models import StudentProfile
 
 from .models import ScheduleEntry
 
 DAY_TITLES = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 
-def _student_entries(user, start, end):
+def _student_entries(profile, start, end):
     """Занятия основной группы плюс занятия языковой группы студента."""
-    profile = user.student_profile
     return (
         ScheduleEntry.objects.filter(
             group=profile.base_group,
@@ -41,7 +42,8 @@ def schedule(request):
         end = start + timedelta(days=1)
         title = "Сегодня"
 
-    entries = list(_student_entries(request.user, start, end))
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    entries = list(_student_entries(profile, start, end))
     days = []
     for offset in range((end - start).days):
         day = start + timedelta(days=offset)
@@ -64,6 +66,6 @@ def schedule(request):
             "view": view,
             "title": title,
             "days": days,
-            "profile": request.user.student_profile,
+            "profile": profile,
         },
     )
