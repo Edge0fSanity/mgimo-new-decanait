@@ -1,5 +1,9 @@
+from django import forms
 from django.contrib import admin
+from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.db import transaction
+from django.template.response import TemplateResponse
+from django.utils import timezone
 
 from apps.communications.models import Notification
 
@@ -8,41 +12,64 @@ from .models import DemoDocument, RequestStatusEvent, StudentRequest
 
 def _transition(queryset, to_status, note, actor):
     """Смена статуса атомарно создаёт событие истории и уведомление студенту."""
-    for obj in queryset:
-        with transaction.atomic():
-            old = obj.status
-            if old == to_status:
-                continue
-            obj.status = to_status
-            obj.save(update_fields=["status", "updated_at"])
-            RequestStatusEvent.objects.create(
-                request=obj, from_status=old, to_status=to_status, actor=actor, note=note
-            )
-            Notification.objects.create(
-                recipient=obj.owner,
-                kind="status",
-                title=f"Заявка {obj.public_number}: {obj.get_status_display()}",
-                target_url=f"/requests/{obj.pk}/",
-            )
+    for pk in list(queryset.values_list("pk", flat=True)):
+        current = StudentRequest.objects.filter(pk=pk)
+        obj = current.first()
+        while obj and obj.status != to_status:
+            with transaction.atomic():
+                updated = current.filter(status=obj.status).update(status=to_status, updated_at=timezone.now())
+                if updated:
+                    RequestStatusEvent.objects.create(
+                        request=obj, from_status=obj.status, to_status=to_status, actor=actor, note=note
+                    )
+                    Notification.objects.create(
+                        recipient_id=obj.owner_id,
+                        kind="status",
+                        title=f"Заявка {obj.public_number}: {to_status.label}",
+                        target_url=f"/requests/{obj.pk}/",
+                    )
+                    break
+            obj = current.first()
 
 
+@admin.action(description="Взять в обработку", permissions=["change"])
+def mark_in_progress(modeladmin, request, queryset):
+    _transition(queryset, StudentRequest.Status.IN_PROGRESS, "Заявка в обработке", request.user)
+
+
+@admin.action(description="Отметить готовой", permissions=["change"])
 def mark_ready(modeladmin, request, queryset):
     _transition(queryset, StudentRequest.Status.READY, "Документ готов к выдаче", request.user)
 
 
+class RejectionForm(forms.Form):
+    reason = forms.CharField(label="Причина отклонения", max_length=200)
+
+
+@admin.action(description="Отклонить", permissions=["change"])
 def mark_rejected(modeladmin, request, queryset):
-    _transition(queryset, StudentRequest.Status.REJECTED, "Заявка отклонена", request.user)
-
-
-mark_ready.short_description = "Отметить «Готово»"
-mark_rejected.short_description = "Отклонить"
+    select_across = modeladmin.action_form.base_fields["select_across"].clean(request.POST.get("select_across"))
+    if select_across:
+        modeladmin.message_user(request, "Для отклонения отметьте нужные заявки на странице.", level="warning")
+        return None
+    form = RejectionForm(request.POST if "confirm_rejection" in request.POST else None)
+    if form.is_valid():
+        _transition(queryset, StudentRequest.Status.REJECTED, form.cleaned_data["reason"], request.user)
+        return None
+    return TemplateResponse(request, "admin/requests_app/reject_requests.html", {
+        **modeladmin.admin_site.each_context(request),
+        "title": "Отклонить заявки",
+        "form": form,
+        "selected": request.POST.getlist(ACTION_CHECKBOX_NAME),
+    })
 
 
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
     list_display = ("public_number", "type", "owner", "status", "submitted_at")
     list_filter = ("status", "type")
-    actions = [mark_ready, mark_rejected]
+    readonly_fields = ("status",)
+    actions = [mark_in_progress, mark_ready, mark_rejected]
 
 
 @admin.register(DemoDocument)

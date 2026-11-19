@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  {% for pk in selected %}<input type="hidden" name="_selected_action" value="{{ pk }}">{% endfor %}
+  <input type="hidden" name="action" value="mark_rejected">
+  <input type="hidden" name="confirm_rejection" value="1">
+  <input type="submit" value="Отклонить заявки">
+  <a href="{{ request.get_full_path }}">Отмена</a>
+</form>
+{% endblock %}

@@ -31,8 +31,8 @@ class StudentRequest(models.Model):
     class Status(models.TextChoices):
         SUBMITTED = "submitted", "Подана"
         IN_PROGRESS = "in_progress", "В обработке"
-        READY = "ready", "Готово"
-        REJECTED = "rejected", "Отклонено"
+        READY = "ready", "Готова"
+        REJECTED = "rejected", "Отклонена"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requests"
