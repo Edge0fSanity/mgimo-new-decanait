@@ -5,14 +5,29 @@
 {% if notifications %}
 <ul class="entries">
   {% for n in notifications %}
-  <li class="entry{% if not n.read_at %} rescheduled{% endif %}">
-    <span class="subject">{{ n.title }}</span>
-    <span class="meta">{{ n.created_at|date:"d.m.Y H:i" }} · {% if n.read_at %}прочитано {{ n.read_at|date:"d.m.Y H:i" }}{% else %}не прочитано{% endif %}</span>
-    {% if n.target_url %}<p><a href="{{ n.target_url }}">Открыть</a></p>{% endif %}
-    {% if not n.read_at %}
-    <form method="post" action="{% url 'notification_read' n.pk %}">
-      {% csrf_token %}<button type="submit">Отметить прочитанным</button>
-    </form>
+  <li class="entry notification{% if not n.read_at %} unread{% endif %}">
+    <div class="record-heading">
+      <span class="subject">{{ n.title }}</span>
+      {% if not n.read_at %}<span class="badge unread-badge">Не прочитано</span>{% endif %}
+    </div>
+    <span class="meta">{{ n.created_at|date:"d.m.Y H:i" }}{% if n.read_at %} · Прочитано {{ n.read_at|date:"d.m.Y H:i" }}{% endif %}</span>
+    {% if n.target_url or not n.read_at %}
+    <div class="actions">
+      {% if n.target_url %}
+      <a class="button" href="{{ n.target_url }}{% if n.kind == 'announcement' and n.target_url == '/' %}#announcements{% endif %}">
+        {% if n.kind == 'status' %}К заявке
+        {% elif n.kind == 'announcement' %}К объявлениям
+        {% elif n.kind == 'deadline' %}К срокам
+        {% elif n.kind == 'reschedule' %}К расписанию
+        {% else %}К событию{% endif %}
+      </a>
+      {% endif %}
+      {% if not n.read_at %}
+      <form method="post" action="{% url 'notification_read' n.pk %}">
+        {% csrf_token %}<button type="submit" class="text-button">Отметить прочитанным</button>
+      </form>
+      {% endif %}
+    </div>
     {% endif %}
   </li>
   {% endfor %}

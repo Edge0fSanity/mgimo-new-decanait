@@ -1,6 +1,9 @@
+from zoneinfo import ZoneInfo
+
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
@@ -12,7 +15,8 @@ from apps.requests_app.models import StudentRequest
 @login_required
 def home(request):
     profile = get_object_or_404(StudentProfile, user=request.user)
-    now = timezone.now()
+    moscow = ZoneInfo("Europe/Moscow")
+    now = timezone.localtime(timezone=moscow)
     next_entry = (
         ScheduleEntry.objects.filter(group=profile.base_group)
         .filter(Q(language_group="") | Q(language_group=profile.language_group))
@@ -21,6 +25,11 @@ def home(request):
         .order_by("starts_at")
         .first()
     )
+    today = now.date()
+    next_entry_date = timezone.localdate(next_entry.starts_at, moscow) if next_entry else None
+    schedule_query = {"view": "today" if next_entry_date == today else "week"}
+    if next_entry_date and next_entry_date != today:
+        schedule_query["week_of"] = next_entry_date.isoformat()
     deadline = (
         Deadline.objects.filter(Q(group=profile.base_group) | Q(student=profile))
         .filter(due_at__gte=now)
@@ -47,7 +56,9 @@ def home(request):
         "dashboard/home.html",
         {
             "profile": profile,
+            "today": today,
             "next_entry": next_entry,
+            "schedule_url": reverse("schedule", query=schedule_query),
             "deadline": deadline,
             "active_request": active_request,
             "announcements": announcements,

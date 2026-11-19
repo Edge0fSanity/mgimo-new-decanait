@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -28,37 +29,43 @@ def _student_entries(profile, start, end):
 
 @login_required
 def schedule(request):
-    """Главная страница «Сегодня» и вид «Неделя»: /schedule?view=today|week."""
+    """Расписание на сегодня или неделю, при необходимости заданную через week_of."""
     view = request.GET.get("view", "today")
-    now = timezone.localtime()
+    moscow = ZoneInfo("Europe/Moscow")
+    today = timezone.localdate(timezone=moscow)
     if view == "week":
-        start = now - timedelta(days=now.weekday())
-        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start + timedelta(days=7)
+        week_of = today
+        try:
+            requested_date = date.fromisoformat(request.GET.get("week_of", ""))
+        except ValueError:
+            pass
+        else:
+            if 1 < requested_date.year < 9999:
+                week_of = requested_date
+        start = datetime.combine(week_of - timedelta(days=week_of.weekday()), time.min, moscow)
+        day_count = 7
         title = "Расписание недели"
     else:
         view = "today"
-        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start + timedelta(days=1)
+        start = datetime.combine(today, time.min, moscow)
+        day_count = 1
         title = "Сегодня"
+    end = start + timedelta(days=day_count)
 
     profile = get_object_or_404(StudentProfile, user=request.user)
     entries = list(_student_entries(profile, start, end))
     days = []
-    for offset in range((end - start).days):
-        day = start + timedelta(days=offset)
-        day_entries = [e for e in entries if timezone.localtime(e.starts_at).date() == day.date()]
+    for offset in range(day_count):
+        day = (start + timedelta(days=offset)).date()
+        day_entries = [e for e in entries if timezone.localdate(e.starts_at, moscow) == day]
         days.append(
             {
-                "date": day.date(),
+                "date": day,
                 "title": DAY_TITLES[day.weekday()],
                 "entries": day_entries,
-                "is_today": day.date() == now.date(),
+                "is_today": day == today,
             }
         )
-    if view == "today":
-        days = [d for d in days if d["is_today"]]
-
     return render(
         request,
         "academics/schedule.html",
@@ -66,6 +73,7 @@ def schedule(request):
             "view": view,
             "title": title,
             "days": days,
+            "shows_today": start.date() <= today < end.date(),
             "profile": profile,
         },
     )

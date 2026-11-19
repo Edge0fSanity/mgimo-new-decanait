@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tz %}
 {% block title %}Дедлайны — Деканат{% endblock %}
 {% block content %}
 <h1>Дедлайны</h1>
@@ -12,7 +13,7 @@
   {% for d in deadlines %}
   <li class="entry">
     <span class="subject">{{ d.title }}</span>
-    <span class="time">до {{ d.due_at|date:"d.m.Y H:i" }}</span>
+    <span class="time">до {{ d.due_at|timezone:"Europe/Moscow"|date:"d.m.Y H:i" }} МСК</span>
   </li>
   {% endfor %}
 </ul>

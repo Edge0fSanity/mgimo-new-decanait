@@ -2,12 +2,17 @@
 {% block title %}{{ title }} — Деканат{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1>
-<form method="post">
+<form method="post" class="student-form">
   {% csrf_token %}
   {{ form.non_field_errors }}
-  {{ form.type }}
-  {% if form.purpose %}<p>{{ form.purpose.label_tag }} {{ form.purpose }} {{ form.purpose.errors }}</p>{% endif %}
-  {% if form.content %}<p>{{ form.content.label_tag }} {{ form.content }} {{ form.content.errors }}</p>{% endif %}
-  <button type="submit">Отправить</button>
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+  {% for field in form.visible_fields %}
+  <div class="form-field">
+    {{ field.label_tag }}
+    {{ field }}
+    {{ field.errors }}
+  </div>
+  {% endfor %}
+  <button type="submit" class="button">{{ title }}</button>
 </form>
 {% endblock %}

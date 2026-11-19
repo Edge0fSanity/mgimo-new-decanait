@@ -1,25 +1,26 @@
 {% extends "base.html" %}
+{% load tz %}
 {% block title %}{{ title }} — Деканат{% endblock %}
 {% block content %}
+{% timezone "Europe/Moscow" %}
 <h1>{{ title }}</h1>
-<p class="context">{{ profile.display_name }} · группа {{ profile.base_group.code }} · языковая {{ profile.language_group }}</p>
-<nav class="view-switch">
-  <a href="/" {% if view == 'today' %}class="active"{% endif %}>Сегодня</a>
-  <a href="/schedule/?view=week" {% if view == 'week' %}class="active"{% endif %}>Неделя</a>
+<p class="context">Группа {{ profile.base_group.code }}{% if profile.language_group %} · языковая {{ profile.language_group }}{% endif %}</p>
+<nav class="view-switch" aria-label="Период расписания">
+  <a href="{% url 'schedule' %}?view=today" {% if view == 'today' %}class="active" aria-current="page"{% endif %}>Сегодня</a>
+  <a href="{% url 'schedule' %}?view=week" {% if view == 'week' %}class="active" aria-current="page"{% endif %}>Неделя</a>
+  {% if view == 'week' and shows_today %}<a class="jump-today" href="#schedule-today">К текущему дню ↓</a>{% endif %}
 </nav>
 {% for day in days %}
-  <section class="day">
+  <section class="day{% if day.is_today %} current-day{% endif %}"{% if day.is_today %} id="schedule-today" tabindex="-1"{% endif %}>
     <h2>{{ day.title }}{% if day.is_today %} (сегодня){% endif %}, {{ day.date|date:"d.m.Y" }}</h2>
     {% if day.entries %}
       <ul class="entries">
         {% for e in day.entries %}
-        <li class="entry{% if e.old_starts_at %} rescheduled{% endif %}">
+        <li class="entry{% if e.old_starts_at or e.old_room %} rescheduled{% endif %}">
           <span class="time">{{ e.starts_at|date:"H:i" }}–{{ e.ends_at|date:"H:i" }}</span>
           <span class="subject">{{ e.subject }}</span>
           <span class="meta">{{ e.room }} · {{ e.teacher }}</span>
-          {% if e.old_starts_at %}
-            <span class="change">Перенос: было {{ e.old_starts_at|date:"d.m H:i" }} ({{ e.old_room }}) → стало {{ e.starts_at|date:"d.m H:i" }} ({{ e.room }}). {{ e.change_reason }} ({{ e.change_source_role }})</span>
-          {% endif %}
+          {% include "academics/_schedule_change.html" with entry=e show_label=True only %}
         </li>
         {% endfor %}
       </ul>
@@ -28,4 +29,5 @@
     {% endif %}
   </section>
 {% endfor %}
+{% endtimezone %}
 {% endblock %}

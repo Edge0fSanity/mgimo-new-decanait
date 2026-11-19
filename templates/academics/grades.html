@@ -12,8 +12,18 @@
 <ul class="entries">
   {% for g in grades %}
   <li class="entry">
-    <span class="subject">{{ g.subject }}</span>
-    <span class="meta">{{ g.get_status_display }}{% if g.value %} · {{ g.value }}{% endif %}{% if g.source_label %} · {{ g.source_label }}{% endif %}</span>
+    <div class="record-heading">
+      <span class="subject">{{ g.subject }}</span>
+      {% with status=g.get_status_display %}
+      <span class="badge grade-{{ g.status }}">
+        {% if g.status == 'recorded' %}
+          {% if g.value %}Оценка {{ g.value }}{% else %}Оценка не указана{% endif %}
+        {% else %}{{ status }}{% endif %}
+      </span>
+      {% if g.status != 'recorded' and g.value and g.value|lower != status|lower %}<span class="grade-value">{{ g.value }}</span>{% endif %}
+      {% endwith %}
+    </div>
+    {% if g.source_label %}<span class="meta">{{ g.source_label }}</span>{% endif %}
   </li>
   {% endfor %}
 </ul>

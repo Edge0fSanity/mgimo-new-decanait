@@ -2,16 +2,23 @@
 {% block title %}Заявки — Деканат{% endblock %}
 {% block content %}
 <h1>Мои заявки</h1>
-<p>
-  <a class="button" href="{% url 'request_create' %}">Новая справка</a>
-  <a class="button" href="{% url 'request_create_kind' 'zayavlenie' %}">Новое заявление</a>
-</p>
+<div class="actions request-actions">
+  <a class="button{% if requests %} secondary{% endif %}" href="{% url 'request_create' %}">Заказать справку</a>
+  <a class="button secondary" href="{% url 'request_create_kind' 'zayavlenie' %}">Подать заявление</a>
+</div>
 {% if requests %}
-<ul class="requests">
+<ul class="entries">
   {% for r in requests %}
   <li>
-    <a href="{% url 'request_detail' r.pk %}">
-      {{ r.public_number }} · {{ r.get_type_display }} · {{ r.get_status_display }} · от {{ r.submitted_at|date:"d.m.Y H:i" }}
+    <a class="entry request-card" href="{% url 'request_detail' r.pk %}">
+      <span class="record-heading">
+        <strong>{{ r.get_type_display }}</strong>
+        <span class="badge status-{{ r.status }}">{{ r.get_status_display }}</span>
+      </span>
+      <span class="meta request-meta">
+        <span class="request-number">{{ r.public_number }}</span>
+        <time datetime="{{ r.submitted_at|date:'c' }}">{{ r.submitted_at|date:"d.m.Y, H:i" }}</time>
+      </span>
     </a>
   </li>
   {% endfor %}

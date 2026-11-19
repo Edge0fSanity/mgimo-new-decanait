@@ -1,28 +1,44 @@
 {% extends "base.html" %}
-{% block title %}{{ obj.public_number }} — Деканат{% endblock %}
+{% block title %}{{ obj.get_type_display }} {{ obj.public_number }} — Деканат{% endblock %}
 {% block content %}
-<h1>Заявка {{ obj.public_number }}</h1>
-<dl class="profile">
-  <dt>Тип</dt><dd>{{ obj.get_type_display }}</dd>
-  <dt>Статус</dt><dd>{{ obj.get_status_display }}</dd>
-  <dt>Подана</dt><dd>{{ obj.submitted_at|date:"d.m.Y H:i" }}</dd>
-  {% if obj.purpose %}<dt>Куда предоставляется</dt><dd>{{ obj.purpose }}</dd>{% endif %}
-  {% if obj.content %}<dt>Текст</dt><dd>{{ obj.content }}</dd>{% endif %}
-</dl>
+<h1>{{ obj.get_type_display }}</h1>
+<section class="entry" aria-label="Сведения о заявке">
+  <div class="record-heading">
+    <strong class="request-number">{{ obj.public_number }}</strong>
+    <span class="badge status-{{ obj.status }}">{{ obj.get_status_display }}</span>
+  </div>
+  <span class="meta">Подана <time datetime="{{ obj.submitted_at|date:'c' }}">{{ obj.submitted_at|date:"d.m.Y, H:i" }}</time></span>
+  {% if obj.status == 'rejected' %}
+  {% if rejection.note %}<p><strong>Причина отклонения</strong><br>{{ rejection.note }}</p>
+  {% else %}<p>Причина отклонения не указана.</p>{% endif %}
+  {% endif %}
+  {% if obj.purpose or obj.content %}
+  <dl class="profile">
+    {% if obj.purpose %}<dt>Куда предоставляется</dt><dd>{{ obj.purpose }}</dd>{% endif %}
+    {% if obj.content %}<dt>Текст заявления</dt><dd>{{ obj.content|linebreaksbr }}</dd>{% endif %}
+  </dl>
+  {% endif %}
+</section>
+{% if documents or obj.status == 'ready' %}
+<section class="document-list">
+  <h2>Документы</h2>
+  <p class="meta">Образец, недействителен</p>
+  <div class="actions">
+    {% for d in documents %}
+    <a class="button" href="{% url 'document_download' d.pk %}">Скачать: {{ d.title }}</a>
+    {% empty %}
+    <a class="button" href="{% url 'request_sample' obj.pk %}">Скачать образец</a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 <h2>История статусов</h2>
 <ul class="events">
   {% for ev in events %}
-  <li>{{ ev.created_at|date:"d.m.Y H:i" }}: {{ ev.get_to_status_display }}{% if ev.note %} — {{ ev.note }}{% endif %}</li>
+  <li><time datetime="{{ ev.created_at|date:'c' }}">{{ ev.created_at|date:"d.m.Y, H:i" }}</time> · {{ ev.get_to_status_display }}{% if ev.note and ev != rejection %} — {{ ev.note }}{% endif %}</li>
   {% empty %}
   <li class="empty">Событий пока нет</li>
   {% endfor %}
 </ul>
-{% if obj.documents.all %}
-<h2>Документы</h2>
-<ul class="events">
-  {% for d in obj.documents.all %}
-  <li><a href="{% url 'document_download' d.pk %}">{{ d.title }}</a> — образец, недействителен</li>
-  {% endfor %}
-</ul>
-{% endif %}
+<a class="action-link" href="{% url 'request_list' %}">К моим заявкам</a>
 {% endblock %}

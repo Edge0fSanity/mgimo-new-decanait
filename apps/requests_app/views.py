@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
 from .forms import RequestForm
@@ -9,8 +10,8 @@ from .models import DemoDocument, RequestStatusEvent, StudentRequest
 
 # Две формы заявки: тип задаёт URL, не студент.
 KINDS = {
-    "spravka": (StudentRequest.Type.CERTIFICATE, "Новая справка"),
-    "zayavlenie": (StudentRequest.Type.APPLICATION, "Новое заявление"),
+    "spravka": (StudentRequest.Type.CERTIFICATE, "Заказать справку"),
+    "zayavlenie": (StudentRequest.Type.APPLICATION, "Подать заявление"),
 }
 
 
@@ -55,15 +56,38 @@ def request_create(request, kind="spravka"):
 def request_detail(request, pk):
     # Чужая заявка не существует для этого пользователя: 404 без содержимого.
     obj = get_object_or_404(StudentRequest, pk=pk, owner=request.user)
+    events = list(obj.status_events.all())
+    rejection = None
+    if obj.status == StudentRequest.Status.REJECTED:
+        rejection = next(
+            (event for event in reversed(events) if event.to_status == StudentRequest.Status.REJECTED),
+            None,
+        )
     return render(
         request,
         "requests_app/request_detail.html",
-        {"obj": obj, "events": obj.status_events.select_related("actor")},
+        {
+            "obj": obj,
+            "events": events,
+            "rejection": rejection,
+            "documents": obj.documents.filter(owner=request.user),
+        },
     )
 
 
 @login_required
 @require_http_methods(["GET"])
+@never_cache
+def request_sample(request, pk):
+    obj = get_object_or_404(StudentRequest, pk=pk, owner=request.user, status=StudentRequest.Status.READY)
+    response = render(request, "requests_app/request_sample.html", {"obj": obj})
+    response.headers["Content-Disposition"] = 'attachment; filename="request-sample.html"'
+    return response
+
+
+@login_required
+@require_http_methods(["GET"])
+@never_cache
 def document_download(request, pk):
     # Чужой документ не существует для этого пользователя: 404 без содержимого.
     doc = get_object_or_404(DemoDocument, pk=pk, owner=request.user)

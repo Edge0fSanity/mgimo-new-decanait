@@ -1,34 +1,55 @@
 {% extends "base.html" %}
-{% block title %}Главная — Деканат{% endblock %}
+{% load tz %}
+{% block title %}Сегодня — Деканат{% endblock %}
 {% block content %}
-<h1>Здравствуйте, {{ profile.display_name }}</h1>
-<section class="entry">
-  <h2>Ближайшая пара</h2>
-  {% if next_entry %}
-    <p><span class="time">{{ next_entry.starts_at|date:"d.m H:i" }}–{{ next_entry.ends_at|date:"H:i" }}</span>
-    <span class="subject">{{ next_entry.subject }}</span>
-    <span class="meta">{{ next_entry.room }} · {{ next_entry.teacher }}</span></p>
-  {% else %}<p class="empty">Ближайших занятий нет</p>{% endif %}
-</section>
-<section class="entry">
-  <h2>Ближайший дедлайн</h2>
-  {% if deadline %}
-    <p>{{ deadline.title }} — <span class="time">до {{ deadline.due_at|date:"d.m.Y H:i" }}</span></p>
-  {% else %}<p class="empty">Активных дедлайнов нет</p>{% endif %}
-</section>
-<section class="entry">
-  <h2>Моя активная заявка</h2>
-  {% if active_request %}
-    <p><a href="{% url 'request_detail' active_request.pk %}">{{ active_request.public_number }}</a>
-    · {{ active_request.get_type_display }} · {{ active_request.get_status_display }}</p>
-  {% else %}<p class="empty">Активных заявок нет</p>{% endif %}
-</section>
-<section class="entry">
+{% timezone "Europe/Moscow" %}
+<div class="today-heading">
+  <h1>Сегодня</h1>
+  <p class="context"><time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"j E" }} · МСК</time> <span>Группа {{ profile.base_group.code }}</span></p>
+</div>
+<div class="today-grid">
+  {% with e=next_entry %}
+  <section class="next-class" aria-labelledby="next-class-title">
+    <h2 id="next-class-title">Ближайшее занятие</h2>
+    {% if e %}
+      <p class="class-date">{{ e.starts_at|date:"l, j E"|capfirst }}{% if e.old_starts_at or e.old_room %} <span class="badge change-badge">Перенос</span>{% endif %}</p>
+      <p class="class-time"><time datetime="{{ e.starts_at|date:'c' }}">{{ e.starts_at|date:"H:i" }}</time>–<time datetime="{{ e.ends_at|date:'c' }}">{{ e.ends_at|date:"H:i" }}</time></p>
+      <p class="class-subject">{{ e.subject }}</p>
+      <div class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span></div>
+      {% include "academics/_schedule_change.html" with entry=e only %}
+    {% else %}
+      <p>Предстоящих занятий нет</p>
+    {% endif %}
+    <a class="class-link" href="{{ schedule_url }}">К расписанию</a>
+  </section>
+  {% endwith %}
+  <div class="today-summary">
+    <section class="entry summary-card">
+      <h2>Ближайший дедлайн</h2>
+      {% if deadline %}
+        <p class="summary-title"><a href="{% url 'deadlines' %}">{{ deadline.title }}</a></p>
+        <p class="meta">До <time datetime="{{ deadline.due_at|date:'c' }}">{{ deadline.due_at|date:"j E, H:i" }}</time></p>
+      {% else %}<p class="empty">Активных дедлайнов нет</p>{% endif %}
+    </section>
+    <section class="entry summary-card">
+      <h2>Активная заявка</h2>
+      {% if active_request %}
+        <p class="summary-title"><a href="{% url 'request_detail' active_request.pk %}">{{ active_request.get_type_display }} <span class="request-number">{{ active_request.public_number }}</span></a></p>
+        <p><span class="badge status-{{ active_request.status }}">{{ active_request.get_status_display }}</span></p>
+      {% else %}
+        <p class="empty">Активных заявок нет</p>
+        <p><a class="action-link" href="{% url 'request_create' %}">Заказать справку</a></p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+<section class="announcements" id="announcements">
   <h2>Объявления</h2>
   {% if announcements %}
-    <ul class="requests">
-      {% for a in announcements %}<li><strong>{{ a.title }}</strong> — {{ a.body }}</li>{% endfor %}
+    <ul class="announcements-list">
+      {% for a in announcements %}<li><strong>{{ a.title }}</strong><p>{{ a.body }}</p></li>{% endfor %}
     </ul>
   {% else %}<p class="empty">Объявлений нет</p>{% endif %}
 </section>
+{% endtimezone %}
 {% endblock %}
