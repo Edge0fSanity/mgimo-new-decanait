@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -24,6 +25,11 @@ class Announcement(models.Model):
         verbose_name = "Объявление"
         verbose_name_plural = "Объявления"
         ordering = ["-published_at"]
+
+    def clean(self):
+        # «Группе» без группы не видит никто (фильтр дашборда) — не даём сохранить.
+        if self.audience == self.Audience.GROUP and not self.group_id:
+            raise ValidationError({"group": "Для аудитории «Группе» укажите группу."})
 
     def __str__(self):
         return self.title
