@@ -55,10 +55,10 @@ class GradesAndExamsTests(A02Base):
         self.assertContains(client.get(reverse("grades")), "Оценок пока нет")
         self.assertContains(client.get(reverse("exams")), "Экзамены не назначены")
 
-    def test_grades_not_in_admin_registry(self):
-        # Служебный интерфейс без оценок: модели не зарегистрированы ни для кого.
-        self.assertNotIn(Grade, admin.site._registry)
-        self.assertNotIn(Exam, admin.site._registry)
+    def test_grades_in_admin_registry(self):
+        # Ввод оценок/экзаменов перенесён в admin (T10): модели зарегистрированы.
+        self.assertIn(Grade, admin.site._registry)
+        self.assertIn(Exam, admin.site._registry)
 
 
 class DocumentAccessTests(A02Base):

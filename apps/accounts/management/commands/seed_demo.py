@@ -209,7 +209,8 @@ class Command(BaseCommand):
             doc = DemoDocument(owner=a, request=req, title="Образец справки")
             doc.file.save("demo_spravka_obrazec.html", ContentFile(html), save=True)
 
-        # Служебный аккаунт staff (не superuser): заявки, объявления, дедлайны; без оценок.
+        # Служебный аккаунт staff (не superuser): заявки, объявления; ввод основных
+        # данных (справочники, расписание, оценки, дедлайны, профили) через admin.
         staff, created = User.objects.get_or_create(username="demo_staff", defaults={"is_staff": True})
         staff_pw = os.environ.get("DEMO_STAFF_PASSWORD")
         if created or staff_pw:
@@ -222,7 +223,13 @@ class Command(BaseCommand):
                 codename__in=[
                     "view_studentrequest", "change_studentrequest",
                     "add_announcement", "change_announcement", "view_announcement",
-                    "view_deadline",
+                    "add_deadline", "change_deadline", "view_deadline",
+                    "add_group", "change_group", "view_group",
+                    "add_subject", "change_subject", "view_subject",
+                    "add_scheduleentry", "change_scheduleentry", "view_scheduleentry",
+                    "add_grade", "change_grade", "view_grade",
+                    "add_exam", "change_exam", "view_exam",
+                    "view_studentprofile", "change_studentprofile",
                 ]
             )
         )

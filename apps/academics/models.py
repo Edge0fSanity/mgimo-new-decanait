@@ -1,4 +1,6 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Group(models.Model):
@@ -29,7 +31,7 @@ class ScheduleEntry(models.Model):
 
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="entries")
     language_group = models.CharField("Языковая группа", max_length=32, blank=True)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
     starts_at = models.DateTimeField("Начало")
     ends_at = models.DateTimeField("Конец")
     room = models.CharField("Аудитория", max_length=64)
@@ -52,6 +54,10 @@ class ScheduleEntry(models.Model):
             )
         ]
 
+    def clean(self):
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValidationError({"ends_at": "Конец занятия должен быть позже начала."})
+
     def __str__(self):
         return f"{self.subject} {self.starts_at:%d.%m %H:%M}"
 
@@ -68,7 +74,7 @@ class Grade(models.Model):
     student = models.ForeignKey(
         "accounts.StudentProfile", on_delete=models.CASCADE, related_name="grades"
     )
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
     value = models.CharField("Оценка", max_length=32, blank=True)
     status = models.CharField(
         "Статус", max_length=16, choices=Status.choices, default=Status.RECORDED
@@ -101,7 +107,7 @@ class Exam(models.Model):
     student = models.ForeignKey(
         "accounts.StudentProfile", on_delete=models.CASCADE, related_name="exams"
     )
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
     scheduled_at = models.DateTimeField("Дата экзамена")
     result = models.CharField("Результат", max_length=32, blank=True)
     status = models.CharField(
@@ -142,6 +148,13 @@ class Deadline(models.Model):
         verbose_name = "Дедлайн"
         verbose_name_plural = "Дедлайны"
         ordering = ["due_at"]
+
+    def clean(self):
+        # Фильтры дашборда (apps/dashboard/views.py): (group | student) и due_at >= now.
+        if self.group_id is None and self.student_id is None:
+            raise ValidationError("Дедлайн должен быть привязан к группе или студенту, иначе его никто не увидит.")
+        if self.due_at and self.due_at < timezone.now():
+            raise ValidationError({"due_at": "Срок не может быть в прошлом — такой дедлайн никто не увидит."})
 
     def __str__(self):
         return self.title
