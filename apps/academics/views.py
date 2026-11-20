@@ -226,3 +226,18 @@ def deadlines(request):
         due_at__gte=timezone.now()
     )
     return render(request, "academics/deadlines.html", {"deadlines": items, "profile": profile})
+
+
+def exam_percent_needed(subject, current_avg, goal=75):
+    """Нужный процент на экзамене до цели рейтинга (ceil) или None.
+
+    None — веса не заданы, текущий контроль не накоплен, цель уже обеспечена
+    или недостижима (в этих случаях строку калькулятора не показываем).
+    """
+    if subject.weight_current is None or subject.weight_exam is None or current_avg is None:
+        return None
+    base = float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
+    needed = (goal - base) / float(subject.weight_exam)
+    if needed <= 0 or needed > 100:
+        return None
+    return math.ceil(needed)

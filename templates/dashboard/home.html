@@ -32,6 +32,12 @@
       {% else %}<p class="empty">Активных дедлайнов нет</p>{% endif %}
     </section>
     <section class="entry summary-card">
+      <h2>Рейтинг</h2>
+      {% if rating_hint %}
+        <p class="summary-title"><a href="{% url 'subject_detail' rating_hint.subject.pk %}">До «хорошо» по {{ rating_hint.subject }} на экзамене нужно {{ rating_hint.needed }}%</a></p>
+      {% else %}<p class="empty">Данных для расчёта рейтинга пока нет</p>{% endif %}
+    </section>
+    <section class="entry summary-card">
       <h2>Активная заявка</h2>
       {% if active_request %}
         <p class="summary-title"><a href="{% url 'request_detail' active_request.pk %}">{{ active_request.get_type_display }} <span class="request-number">{{ active_request.public_number }}</span></a></p>
