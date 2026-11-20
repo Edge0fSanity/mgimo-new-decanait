@@ -8,6 +8,10 @@
 <nav class="view-switch" aria-label="Период расписания">
   <a href="{% url 'schedule' %}?view=today" {% if view == 'today' %}class="active" aria-current="page"{% endif %}>Сегодня</a>
   <a href="{% url 'schedule' %}?view=week" {% if view == 'week' %}class="active" aria-current="page"{% endif %}>Неделя</a>
+  {% if view == 'week' %}
+  <a href="{% url 'schedule' %}?view=week&amp;week_of={{ prev_week }}">← Предыдущая неделя</a>
+  <a href="{% url 'schedule' %}?view=week&amp;week_of={{ next_week }}">Следующая неделя →</a>
+  {% endif %}
   {% if view == 'week' and shows_today %}<a class="jump-today" href="#schedule-today">К текущему дню ↓</a>{% endif %}
 </nav>
 {% for day in days %}

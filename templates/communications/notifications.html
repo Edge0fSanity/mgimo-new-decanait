@@ -2,6 +2,11 @@
 {% block title %}Уведомления — Деканат{% endblock %}
 {% block content %}
 <h1>Уведомления</h1>
+{% if has_unread %}
+<form method="post" action="{% url 'notification_read_all' %}">
+  {% csrf_token %}<button type="submit" class="text-button">Отметить все прочитанными</button>
+</form>
+{% endif %}
 {% if notifications %}
 <ul class="entries">
   {% for n in notifications %}

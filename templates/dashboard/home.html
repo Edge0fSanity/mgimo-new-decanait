@@ -44,7 +44,7 @@
         <p><span class="badge status-{{ active_request.status }}">{{ active_request.get_status_display }}</span></p>
       {% else %}
         <p class="empty">Активных заявок нет</p>
-        <p><a class="action-link" href="{% url 'request_create' %}">Заказать справку</a></p>
+        <p><a class="action-link" href="{% url 'request_create' %}">Заказать справку</a> · <a class="action-link" href="{% url 'request_create_kind' 'zayavlenie' %}">Подать заявление</a></p>
       {% endif %}
     </section>
   </div>
@@ -63,6 +63,7 @@
       {% endfor %}
     </ul>
   {% else %}<p class="empty">Объявлений нет</p>{% endif %}
+  <p><a href="{% url 'announcements' %}">Все объявления</a></p>
 </section>
 {% endtimezone %}
 {% endblock %}

@@ -60,6 +60,7 @@ def schedule(request):
     today = timezone.localdate(timezone=moscow)
     if view == "week":
         week_of = today
+        prev_week = next_week = None
         try:
             requested_date = date.fromisoformat(request.GET.get("week_of", ""))
         except ValueError:
@@ -70,6 +71,8 @@ def schedule(request):
         start = datetime.combine(week_of - timedelta(days=week_of.weekday()), time.min, moscow)
         day_count = 7
         title = "Расписание недели"
+        prev_week = (week_of - timedelta(days=7)).isoformat()
+        next_week = (week_of + timedelta(days=7)).isoformat()
     else:
         view = "today"
         start = datetime.combine(today, time.min, moscow)
@@ -99,6 +102,8 @@ def schedule(request):
             "title": title,
             "days": days,
             "shows_today": start.date() <= today < end.date(),
+            "prev_week": prev_week if view == "week" else None,
+            "next_week": next_week if view == "week" else None,
             "profile": profile,
         },
     )
