@@ -8,22 +8,39 @@
   <a href="{% url 'exams' %}">Экзамены</a>
   <a href="{% url 'deadlines' %}">Дедлайны</a>
 </nav>
-{% if grades %}
+{% if summary %}
+<div class="entry summary-card">
+  <h2>Сводка семестра</h2>
+  <p><span class="summary-title">Средний рейтинг: {{ summary.percent }}% · {{ summary.mark }}</span>
+     · дисциплин: {{ summary.subjects }} · задолженности: {{ summary.debts }}</p>
+</div>
+{% endif %}
+{% if cards %}
 <ul class="entries">
-  {% for g in grades %}
+  {% for c in cards %}
   <li class="entry">
     <div class="record-heading">
-      <span class="subject">{{ g.subject }}</span>
-      {% with status=g.get_status_display %}
-      <span class="badge grade-{{ g.status }}">
-        {% if g.status == 'recorded' %}
-          {% if g.value %}Оценка {{ g.value }}{% else %}Оценка не указана{% endif %}
+      <a class="subject" href="{% url 'subject_detail' c.subject.pk %}">{{ c.subject }}</a>
+      {% with status=c.grade.get_status_display %}
+      <span class="badge grade-{{ c.grade.status }}">
+        {% if c.grade.status == 'recorded' %}
+          {% if c.grade.value %}Оценка {{ c.grade.value }} (итог){% else %}Оценка не указана{% endif %}
+        {% elif c.grade.status == 'credit' %}Зачёт получен
+        {% elif c.grade.status == 'not_entered' %}Зачёт — ещё не выставлен
         {% else %}{{ status }}{% endif %}
       </span>
-      {% if g.status != 'recorded' and g.value and g.value|lower != status|lower %}<span class="grade-value">{{ g.value }}</span>{% endif %}
+      {% if c.grade.status != 'recorded' and c.grade.value and c.grade.value|lower != status|lower %}<span class="grade-value">{{ c.grade.value }}</span>{% endif %}
       {% endwith %}
     </div>
-    {% if g.source_label %}<span class="meta">{{ g.source_label }}</span>{% endif %}
+    {% if c.grade.status == 'debt' and c.exam %}
+    <span class="meta">Задолженность · пересдача {{ c.exam.scheduled_at|date:"d.m.Y" }}</span>
+    {% endif %}
+    {% if c.rating %}
+    <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %} · прогноз предварительный{% if c.missing_count %}: не внесено оценок — {{ c.missing_count }}{% endif %}{% endif %}</span>
+    {% elif c.current_avg %}
+    <span class="meta">Текущий контроль: {{ c.current_avg }}% · схема оценивания не задана</span>
+    {% endif %}
+    {% if c.grade.source_label %}<span class="meta">{{ c.grade.source_label }}</span>{% endif %}
   </li>
   {% endfor %}
 </ul>

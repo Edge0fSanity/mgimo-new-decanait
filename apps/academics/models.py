@@ -17,6 +17,17 @@ class Group(models.Model):
 
 class Subject(models.Model):
     title = models.CharField("Дисциплина", max_length=120, unique=True)
+    # Веса блоков рейтинга («Положение об академическом рейтинге»); nullable —
+    # схема оценивания может быть не задана, тогда рейтинг не считается.
+    weight_current = models.DecimalField(
+        "Вес текущего контроля", max_digits=3, decimal_places=2, null=True, blank=True
+    )
+    weight_exam = models.DecimalField(
+        "Вес сессии", max_digits=3, decimal_places=2, null=True, blank=True
+    )
+    weight_social = models.DecimalField(
+        "Вес соц. блока", max_digits=3, decimal_places=2, null=True, blank=True
+    )
 
     class Meta:
         verbose_name = "Дисциплина"
@@ -24,6 +35,38 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.title
+
+
+def percent_to_mark(percent):
+    """Шкала Положения об академическом рейтинге: 0–100% -> оценка."""
+    if percent >= 90:
+        return "отлично"
+    if percent >= 75:
+        return "хорошо"
+    if percent >= 60:
+        return "удовлетворительно"
+    return "неудовлетворительно"
+
+
+class CurrentControlElement(models.Model):
+    """Элемент текущего контроля (контрольная/эссэ/коллоквиум). percent null => «не внесено»."""
+
+    subject = models.ForeignKey(
+        Subject, on_delete=models.PROTECT, related_name="control_elements"
+    )
+    title = models.CharField("Элемент контроля", max_length=120)
+    percent = models.DecimalField("Процент", max_digits=5, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Элемент текущего контроля"
+        verbose_name_plural = "Элементы текущего контроля"
+        ordering = ["pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["subject", "title"], name="uniq_control_element")
+        ]
+
+    def __str__(self):
+        return f"{self.subject}: {self.title}"
 
 
 class ScheduleEntry(models.Model):
@@ -76,6 +119,9 @@ class Grade(models.Model):
     )
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
     value = models.CharField("Оценка", max_length=32, blank=True)
+    percent = models.DecimalField(
+        "Процент (сессия)", max_digits=5, decimal_places=2, null=True, blank=True
+    )
     status = models.CharField(
         "Статус", max_length=16, choices=Status.choices, default=Status.RECORDED
     )

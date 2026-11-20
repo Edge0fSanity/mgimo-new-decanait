@@ -1,13 +1,31 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from apps.academics.models import Deadline, Exam, Grade, Group, ScheduleEntry, Subject
+from apps.academics.models import (
+    CurrentControlElement,
+    Deadline,
+    Exam,
+    Grade,
+    Group,
+    ScheduleEntry,
+    Subject,
+)
 
 admin.site.register(Group)
-admin.site.register(Subject)
 admin.site.register(Grade)
 admin.site.register(Exam)
 admin.site.register(Deadline)
+
+
+class CurrentControlElementInline(admin.TabularInline):
+    model = CurrentControlElement
+    extra = 3
+
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ("title", "weight_current", "weight_exam", "weight_social")
+    inlines = (CurrentControlElementInline,)
 
 
 @admin.register(ScheduleEntry)

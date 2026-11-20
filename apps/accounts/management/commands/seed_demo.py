@@ -20,7 +20,15 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
-from apps.academics.models import Deadline, Exam, Grade, Group, ScheduleEntry, Subject
+from apps.academics.models import (
+    CurrentControlElement,
+    Deadline,
+    Exam,
+    Grade,
+    Group,
+    ScheduleEntry,
+    Subject,
+)
 from apps.communications.models import Announcement, Notification
 from apps.requests_app.models import DemoDocument, RequestStatusEvent, StudentRequest
 
@@ -54,6 +62,29 @@ class Command(BaseCommand):
         subjects = {}
         for title in ["Микроэкономика", "Иностранный язык", "История международных отношений", "Математический анализ"]:
             subjects[title], _ = Subject.objects.get_or_create(title=title)
+
+        # Веса блоков рейтинга и элементы текущего контроля (T15/T17). Веса задаём
+        # только если ещё не заданы, чтобы не затирать правки из admin.
+        weight_plan = {
+            "Микроэкономика": ("0.40", "0.50", "0.10"),
+            "Математический анализ": ("0.40", "0.50", "0.10"),
+        }
+        for title, weights in weight_plan.items():
+            subject = subjects[title]
+            if subject.weight_current is None:
+                subject.weight_current, subject.weight_exam, subject.weight_social = weights
+                subject.save(update_fields=["weight_current", "weight_exam", "weight_social"])
+        control_plan = {  # (предмет, элемент, процент; None => «не внесено»)
+            ("Микроэкономика", "Контрольная работа", "85"),
+            ("Микроэкономика", "Эссэ", "78"),
+            ("Математический анализ", "Коллоквиум", None),
+        }
+        for title, element_title, percent in control_plan:
+            CurrentControlElement.objects.get_or_create(
+                subject=subjects[title],
+                title=element_title,
+                defaults={"percent": percent},
+            )
 
         specs = [
             ("demo_a", "Иванова Анна", "ФМЭП", "Международные экономические отношения", 1, "EN-1", "Мировая экономика"),
@@ -138,23 +169,23 @@ class Command(BaseCommand):
         profiles = {username: StudentProfile.objects.get(user=u) for username, u in users.items()}
         grade_plan = {
             "demo_a": [
-                ("Микроэкономика", Grade.Status.RECORDED, "5", "Аттестация 1 модуля"),
-                ("Иностранный язык", Grade.Status.CREDIT, "зачёт", "Аттестация 1 модуля"),
-                ("Математический анализ", Grade.Status.DEBT, "", "Сессия 1 семестра"),
+                ("Микроэкономика", Grade.Status.RECORDED, "5", "Аттестация 1 модуля", "95"),
+                ("Иностранный язык", Grade.Status.CREDIT, "зачёт", "Аттестация 1 модуля", None),
+                ("Математический анализ", Grade.Status.DEBT, "", "Сессия 1 семестра", None),
             ],
             "demo_b": [
-                ("Микроэкономика", Grade.Status.RECORDED, "4", "Аттестация 1 модуля"),
-                ("Иностранный язык", Grade.Status.CREDIT, "зачёт", "Аттестация 1 модуля"),
-                ("Математический анализ", Grade.Status.NOT_ENTERED, "", "Сессия 1 семестра"),
+                ("Микроэкономика", Grade.Status.RECORDED, "4", "Аттестация 1 модуля", None),
+                ("Иностранный язык", Grade.Status.CREDIT, "зачёт", "Аттестация 1 модуля", None),
+                ("Математический анализ", Grade.Status.NOT_ENTERED, "", "Сессия 1 семестра", None),
             ],
         }
         for username, rows in grade_plan.items():
-            for subject_title, status, value, source in rows:
+            for subject_title, status, value, source, percent in rows:
                 Grade.objects.get_or_create(
                     student=profiles[username],
                     subject=subjects[subject_title],
                     source_label=source,
-                    defaults={"status": status, "value": value},
+                    defaults={"status": status, "value": value, "percent": percent},
                 )
         exam_at = monday + timedelta(days=7, hours=10)
         for username in ("demo_a", "demo_b"):
@@ -229,6 +260,7 @@ class Command(BaseCommand):
                     "add_scheduleentry", "change_scheduleentry", "view_scheduleentry",
                     "add_grade", "change_grade", "view_grade",
                     "add_exam", "change_exam", "view_exam",
+                    "add_currentcontrolelement", "change_currentcontrolelement", "view_currentcontrolelement",
                     "view_studentprofile", "change_studentprofile",
                 ]
             )

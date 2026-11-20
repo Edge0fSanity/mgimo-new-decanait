@@ -1,3 +1,4 @@
+import math
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -8,9 +9,32 @@ from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
 
-from .models import Deadline, Exam, Grade, ScheduleEntry
+from .models import Deadline, Exam, Grade, ScheduleEntry, Subject, percent_to_mark
 
 DAY_TITLES = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+
+# Соц. блок (0,1) нигде не вводится — считаем зачтённым (100%).
+SOCIAL_PERCENT = 100
+
+# Цели калькулятора: (процент рейтинга, подпись).
+RATING_GOALS = [(60, "не получить задолженность"), (75, "хорошо"), (90, "отлично")]
+
+
+def _avg(values):
+    return sum(values) / len(values) if values else None
+
+
+def _rating(subject, current_avg, exam_percent):
+    """Итоговый процент по формуле положения: (процент, финальный) или None.
+
+    None — схема оценивания не задана или текущий контроль ещё не накоплен.
+    """
+    if subject.weight_current is None or subject.weight_exam is None or current_avg is None:
+        return None
+    base = float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
+    if exam_percent is None:
+        return base, False
+    return base + float(subject.weight_exam) * exam_percent, True
 
 
 def _student_entries(profile, start, end):
@@ -82,10 +106,106 @@ def schedule(request):
 @login_required
 def grades(request):
     profile = get_object_or_404(StudentProfile, user=request.user)
+    # Несколько строк на дисциплину (аттестация + сессия): для карточки берём последнюю.
+    by_subject = {}
+    for g in profile.grades.select_related("subject"):
+        kept = by_subject.get(g.subject_id)
+        if kept is None or g.updated_at > kept.updated_at:
+            by_subject[g.subject_id] = g
+    cards, ratings, debts = [], [], 0
+    for grade in by_subject.values():
+        subject = grade.subject
+        elements = list(subject.control_elements.all())
+        entered = [float(e.percent) for e in elements if e.percent is not None]
+        current_avg = _avg(entered)
+        exam_percent = float(grade.percent) if grade.percent is not None else None
+        rating = _rating(subject, current_avg, exam_percent)
+        if rating:
+            ratings.append(rating[0])
+        if grade.status == Grade.Status.DEBT:
+            debts += 1
+        cards.append(
+            {
+                "grade": grade,
+                "subject": subject,
+                "exam": profile.exams.filter(subject=subject).order_by("scheduled_at").first(),
+                "elements": elements,
+                "current_avg": round(current_avg) if current_avg is not None else None,
+                "missing_count": len(elements) - len(entered),
+                "rating": round(rating[0]) if rating else None,
+                "rating_final": rating[1] if rating else False,
+                "rating_mark": percent_to_mark(rating[0]) if rating else None,
+            }
+        )
+    summary = None
+    if ratings:
+        avg = sum(ratings) / len(ratings)
+        summary = {
+            "percent": round(avg),
+            "mark": percent_to_mark(avg),
+            "subjects": len(by_subject),
+            "debts": debts,
+        }
     return render(
         request,
         "academics/grades.html",
-        {"grades": profile.grades.select_related("subject"), "profile": profile},
+        {"cards": cards, "summary": summary, "profile": profile},
+    )
+
+
+@login_required
+def subject_detail(request, pk):
+    """Калькулятор рейтинга дисциплины: расчёт только по request.user, чужая дисциплина — 404."""
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    subject = get_object_or_404(
+        Subject.objects.filter(Q(grade__student=profile) | Q(exam__student=profile)), pk=pk
+    )
+    grade = profile.grades.filter(subject=subject).order_by("-updated_at").first()
+    exam = profile.exams.filter(subject=subject).order_by("scheduled_at").first()
+    elements = list(subject.control_elements.all())
+    entered = [float(e.percent) for e in elements if e.percent is not None]
+    current_avg = _avg(entered)
+    weights_set = False
+
+    n = None
+    if request.GET.get("n"):
+        try:
+            n = min(100.0, max(0.0, float(request.GET["n"])))
+        except ValueError:
+            pass
+
+    targets, slider = [], None
+    if subject.weight_current is not None and subject.weight_exam is not None and current_avg is not None:
+        weights_set = True
+        w_exam = float(subject.weight_exam)
+        base = float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
+        for goal, label in RATING_GOALS:
+            needed = (goal - base) / w_exam
+            if needed <= 0:
+                text = "уже обеспечено при любом результате экзамена"
+            elif needed > 100:
+                text = f"недостижимо, максимум — {percent_to_mark(base + w_exam * 100)}"
+            else:
+                text = f"получить на экзамене не меньше {math.ceil(needed)}%"
+            targets.append({"goal": goal, "label": label, "text": text})
+        if n is not None:
+            total = base + w_exam * n
+            slider = {"n": int(n), "total": round(total), "mark": percent_to_mark(total)}
+    return render(
+        request,
+        "academics/subject_detail.html",
+        {
+            "subject": subject,
+            "grade": grade,
+            "exam": exam,
+            "elements": elements,
+            "current_avg": round(current_avg) if current_avg is not None else None,
+            "missing_count": len(elements) - len(entered),
+            "weights_set": weights_set,
+            "targets": targets,
+            "slider": slider,
+            "profile": profile,
+        },
     )
 
 
