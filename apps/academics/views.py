@@ -4,7 +4,8 @@ from zoneinfo import ZoneInfo
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseNotAllowed
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
@@ -226,6 +227,43 @@ def deadlines(request):
         due_at__gte=timezone.now()
     )
     return render(request, "academics/deadlines.html", {"deadlines": items, "profile": profile})
+
+
+@login_required
+def add_retake_deadline(request, pk):
+    """T20: «Добавить в мои сроки» для пересдачи задолженности; чужой экзамен — 404."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    exam = get_object_or_404(Exam, pk=pk, student=profile)
+    if exam.retake_at:
+        Deadline.objects.get_or_create(
+            student=profile,
+            title=f"Пересдача: {exam.subject}",
+            defaults={"due_at": exam.retake_at},
+        )
+    return redirect("grades")
+
+
+@login_required
+def add_homework_deadline(request, pk):
+    """T23: «добавить в сроки» для задания с пары; чужое занятие — 404."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    entry = get_object_or_404(
+        ScheduleEntry.objects.filter(group=profile.base_group).filter(
+            Q(language_group="") | Q(language_group=profile.language_group)
+        ),
+        pk=pk,
+        homework__gt="",
+    )
+    Deadline.objects.get_or_create(
+        student=profile,
+        title=f"Задание: {entry.subject}",
+        defaults={"due_at": entry.starts_at},
+    )
+    return redirect("schedule")
 
 
 def exam_percent_needed(subject, current_avg, goal=75):

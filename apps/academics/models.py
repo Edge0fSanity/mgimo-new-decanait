@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -85,6 +86,15 @@ class ScheduleEntry(models.Model):
     change_reason = models.CharField(max_length=200, blank=True)
     change_source_role = models.CharField(max_length=32, blank=True)
     changed_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="schedule_changes",
+        verbose_name="Кто изменил",
+    )
+    homework = models.TextField("Задание с пары", blank=True)
 
     class Meta:
         verbose_name = "Занятие"
@@ -159,6 +169,9 @@ class Exam(models.Model):
     status = models.CharField(
         "Статус", max_length=16, choices=Status.choices, default=Status.SCHEDULED
     )
+    # Пересдача задолженности (T20): null => дата ещё не назначена.
+    retake_at = models.DateTimeField("Дата пересдачи", null=True, blank=True)
+    retake_room = models.CharField("Аудитория пересдачи", max_length=64, blank=True)
 
     class Meta:
         verbose_name = "Экзамен"

@@ -7,8 +7,8 @@
   </p>
   <p>Стало: <time datetime="{{ entry.starts_at|date:'c' }}">{{ entry.starts_at|date:"j E, H:i" }}</time> · {{ entry.room }}</p>
   {% if entry.change_reason %}<p>{{ entry.change_reason }}</p>{% endif %}
-  {% if entry.change_source_role or entry.changed_at %}
-  <p>{{ entry.change_source_role }}{% if entry.change_source_role and entry.changed_at %} · {% endif %}{% if entry.changed_at %}<time datetime="{{ entry.changed_at|date:'c' }}">{{ entry.changed_at|date:"j E, H:i" }}</time>{% endif %}</p>
+  {% if entry.change_source_role or entry.changed_at or entry.updated_by %}
+  <p>{% if entry.updated_by %}внёс {{ entry.updated_by.get_full_name|default:entry.updated_by.username }}{% if entry.changed_at %}, {% endif %}{% endif %}{% if entry.changed_at %}<time datetime="{{ entry.changed_at|date:'c' }}">{{ entry.changed_at|date:"j E, H:i" }}</time>{% endif %}</p>
   {% endif %}
 </div>
 {% endif %}

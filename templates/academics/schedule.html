@@ -20,6 +20,13 @@
           <span class="time">{{ e.starts_at|date:"H:i" }}–{{ e.ends_at|date:"H:i" }}</span>
           <span class="subject">{{ e.subject }}</span>
           <span class="meta">{{ e.room }} · {{ e.teacher }}</span>
+          {% if e.homework %}
+          <span class="meta">Задание: {{ e.homework }}</span>
+          <form method="post" action="{% url 'homework_deadline' e.pk %}">
+            {% csrf_token %}
+            <button type="submit">Добавить в мои сроки</button>
+          </form>
+          {% endif %}
           {% include "academics/_schedule_change.html" with entry=e show_label=True only %}
         </li>
         {% endfor %}

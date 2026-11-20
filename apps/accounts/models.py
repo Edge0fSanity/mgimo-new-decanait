@@ -17,6 +17,8 @@ class StudentProfile(models.Model):
     specialization = models.CharField("Специализация", max_length=120, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Предыдущий вход (T19.4): обновляется при входе, прежнее значение уходит в сессию.
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Профиль студента"

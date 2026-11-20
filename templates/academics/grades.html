@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% load tz %}
 {% block title %}Оценки — Деканат{% endblock %}
 {% block content %}
 <h1>Оценки и зачёты</h1>
 <p class="context">{{ profile.display_name }} · группа {{ profile.base_group.code }}</p>
+<p class="context">Эти данные видите только вы</p>
 <nav class="view-switch" aria-label="Разделы учёбы">
   <a href="{% url 'grades' %}" class="active" aria-current="page">Оценки</a>
   <a href="{% url 'exams' %}">Экзамены</a>
@@ -26,7 +28,7 @@
         {% if c.grade.status == 'recorded' %}
           {% if c.grade.value %}Оценка {{ c.grade.value }} (итог){% else %}Оценка не указана{% endif %}
         {% elif c.grade.status == 'credit' %}Зачёт получен
-        {% elif c.grade.status == 'not_entered' %}Зачёт — ещё не выставлен
+        {% elif c.grade.status == 'not_entered' %}Преподаватель ещё не внёс оценку · ожидается
         {% else %}{{ status }}{% endif %}
       </span>
       {% if c.grade.status != 'recorded' and c.grade.value and c.grade.value|lower != status|lower %}<span class="grade-value">{{ c.grade.value }}</span>{% endif %}
@@ -34,6 +36,13 @@
     </div>
     {% if c.grade.status == 'debt' and c.exam %}
     <span class="meta">Задолженность · пересдача {{ c.exam.scheduled_at|date:"d.m.Y" }}</span>
+      {% if c.exam.retake_at %}
+      <span class="meta">Пересдача: {{ c.exam.retake_at|timezone:"Europe/Moscow"|date:"d.m.Y H:i" }}{% if c.exam.retake_room %} · ауд. {{ c.exam.retake_room }}{% endif %}</span>
+      <form method="post" action="{% url 'exam_retake_deadline' c.exam.pk %}">
+        {% csrf_token %}
+        <button type="submit">Добавить в мои сроки</button>
+      </form>
+      {% endif %}
     {% endif %}
     {% if c.rating %}
     <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %} · прогноз предварительный{% if c.missing_count %}: не внесено оценок — {{ c.missing_count }}{% endif %}{% endif %}</span>
@@ -41,6 +50,7 @@
     <span class="meta">Текущий контроль: {{ c.current_avg }}% · схема оценивания не задана</span>
     {% endif %}
     {% if c.grade.source_label %}<span class="meta">{{ c.grade.source_label }}</span>{% endif %}
+    <span class="meta">обновлено {{ c.grade.updated_at|timesince }} назад</span>
   </li>
   {% endfor %}
 </ul>

@@ -53,7 +53,14 @@
   <h2>Объявления</h2>
   {% if announcements %}
     <ul class="announcements-list">
-      {% for a in announcements %}<li><strong>{{ a.title }}</strong><p>{{ a.body }}</p></li>{% endfor %}
+      {% for a in announcements %}
+      <li>
+        {% if last_seen and a.published_at > last_seen %}<span class="new-dot" title="новое с вашего прошлого входа">●</span> {% endif %}
+        <strong>{{ a.title }}</strong>
+        <p>{{ a.body }}</p>
+        <p class="meta">опубликовано {{ a.published_at|timesince }} назад</p>
+      </li>
+      {% endfor %}
     </ul>
   {% else %}<p class="empty">Объявлений нет</p>{% endif %}
 </section>

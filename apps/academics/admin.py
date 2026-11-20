@@ -40,4 +40,6 @@ class ScheduleEntryAdmin(admin.ModelAdmin):
                 obj.old_starts_at = old.starts_at
                 obj.old_room = old.room
                 obj.changed_at = timezone.now()
+            # T19.2: автор правки переноса.
+            obj.updated_by = request.user
         super().save_model(request, obj, form, change)
