@@ -111,3 +111,16 @@ D-P007 | 19.11.2026 | UX-проход по формулировкам (копи-
 
 Ограничения: пометка «Образец, недействителен» (D-R05) и «Подана» (UI_SPEC) не менялись; браузерный прогон формулировок не проводился — только исходники и тесты.
 Стоимость: неизвестно. Ручные действия: нет.
+
+D-P008 | 21.11.2026 | Ревью администрирования: T6–T14 (ввод основных данных через admin).
+
+Пользователь: «иди дальше по tasks.md. используй скилл ponytail. для реализации небольших задач, экономии токенов и контекста используй субагентов».
+
+Инструмент: Hermes Agent (модель MiniMax-M2.5-NVFP4), реализация — 3 параллельных субагента той же модели (worktree-изоляция, мерж в master родителем).
+
+Результат: T6 — Group/Subject/ScheduleEntry/Grade/Exam зарегистрированы в admin; ScheduleEntryAdmin.save_model при изменении времени/аудитории заполняет old_starts_at/old_room/changed_at (семантика переноса сохраняется). T7 — apps/accounts/admin.py: StudentProfile на просмотр/правку, поиск по ФИО и логину, без add. T8 — read-only inline RequestStatusEvent в карточке заявки. T9 — clean(): ScheduleEntry ends_at>starts_at; Deadline привязан к группе/студенту и не в прошлом; Announcement «Группе» требует группу (admin вызывает full_clean). T10 — on_delete=PROTECT на subject у Grade/Exam/ScheduleEntry (+миграция 0003 academics), тест реестра обновлён. T11 — staff в seed: add/change/view на deadline/group/subject/scheduleentry/grade/exam + view/change studentprofile. T12 — search_fields (public_number, owner__username, ФИО) + list_select_related. T13 — admin.site.title/header «Цифровой деканат — служебный интерфейс», README: createsuperuser/восстановление доступа, чек-лист A05 в docs/QA.md (collectstatic при DEBUG=False, rate limit на /admin/login/). T14 — D-ADR-17 в docs/ADR.md (интеграция с 1С отложена, точка подключения — отдельное приложение/command, естественные ключи).
+
+Команды и фактический вывод: `uv run python manage.py check` → 0 issues; `uv run python manage.py test tests` → "Ran 37 tests ... OK" (было 26, +11 новых); seed_demo дважды подряд — идемпотентно; миграция 0003 academics применена.
+
+Ограничения: фактический рендер admin в браузере не проверялся (только конфигурация реестра и тесты); rate limit — задача A05; TASKS.md (блок T15–T26 пользователя) не коммитился.
+Стоимость: неизвестно. Ручные действия: нет.
