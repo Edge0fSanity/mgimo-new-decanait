@@ -13,7 +13,7 @@ def make_student(username, name, lang, spec):
     group, _ = Group.objects.get_or_create(code="МЭО-01", defaults={"title": "Тестовая группа"})
     user = get_user_model().objects.create_user(username, password=TEST_PASSWORD, first_name=name.split()[0], last_name=name.split()[1])
     StudentProfile.objects.create(
-        user=user, display_name=name, faculty="ФМЭП",
+        user=user, display_name=name, faculty="МЭО",
         program="Международные экономические отношения", year=1,
         base_group=group, language_group=lang, specialization=spec,
     )
