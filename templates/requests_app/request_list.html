@@ -12,7 +12,7 @@
   <li>
     <a class="entry request-card" href="{% url 'request_detail' r.pk %}">
       <span class="record-heading">
-        <strong>{{ r.get_type_display }}</strong>
+        <strong>{{ r.get_type_display }}{% if r.subtype %} · {{ r.get_subtype_display }}{% endif %}</strong>
         <span class="badge status-{{ r.status }}">{{ r.get_status_display }}</span>
       </span>
       <span class="meta request-meta">

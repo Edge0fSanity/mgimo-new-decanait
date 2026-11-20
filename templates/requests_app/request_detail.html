@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ obj.get_type_display }} {{ obj.public_number }} — Деканат{% endblock %}
+{% block title %}{{ obj.get_type_display }}{% if obj.subtype %} · {{ obj.get_subtype_display }}{% endif %} {{ obj.public_number }} — Деканат{% endblock %}
 {% block content %}
-<h1>{{ obj.get_type_display }}</h1>
+<h1>{{ obj.get_type_display }}{% if obj.subtype %} · {{ obj.get_subtype_display }}{% endif %}</h1>
 <section class="entry" aria-label="Сведения о заявке">
   <div class="record-heading">
     <strong class="request-number">{{ obj.public_number }}</strong>
@@ -12,11 +12,19 @@
   {% if rejection.note %}<p><strong>Причина отклонения</strong><br>{{ rejection.note }}</p>
   {% else %}<p>Причина отклонения не указана.</p>{% endif %}
   {% endif %}
-  {% if obj.purpose or obj.content %}
+  {% if obj.organization or obj.purpose or obj.content or obj.delivery_method %}
   <dl class="profile">
-    {% if obj.purpose %}<dt>Куда предоставляется</dt><dd>{{ obj.purpose }}</dd>{% endif %}
+    {% if obj.organization %}<dt>Куда предоставляется</dt><dd>{{ obj.organization }}</dd>{% endif %}
+    {% if obj.purpose %}<dt>Цель</dt><dd>{{ obj.purpose }}</dd>{% endif %}
+    {% if obj.delivery_method %}<dt>Способ получения</dt><dd>{{ obj.get_delivery_method_display }}</dd>{% endif %}
     {% if obj.content %}<dt>Текст заявления</dt><dd>{{ obj.content|linebreaksbr }}</dd>{% endif %}
   </dl>
+  {% endif %}
+  {% if obj.status == 'submitted' %}
+  <form method="post" action="{% url 'request_cancel' obj.pk %}" class="actions">
+    {% csrf_token %}
+    <button type="submit" class="button secondary">Отменить заявку</button>
+  </form>
   {% endif %}
 </section>
 {% if documents or obj.status == 'ready' %}
@@ -32,7 +40,7 @@
   </div>
 </section>
 {% endif %}
-<h2>История статусов</h2>
+<h2>Таймлайн заявки</h2>
 <ul class="events">
   {% for ev in events %}
   <li><time datetime="{{ ev.created_at|date:'c' }}">{{ ev.created_at|date:"d.m.Y, H:i" }}</time> · {{ ev.get_to_status_display }}{% if ev.note and ev != rejection %} — {{ ev.note }}{% endif %}</li>

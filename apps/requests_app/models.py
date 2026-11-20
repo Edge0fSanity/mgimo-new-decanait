@@ -33,17 +33,33 @@ class StudentRequest(models.Model):
         IN_PROGRESS = "in_progress", "В обработке"
         READY = "ready", "Готова"
         REJECTED = "rejected", "Отклонена"
+        CANCELLED = "cancelled", "Отменена"
+
+    class Subtype(models.TextChoices):
+        STUDY = "study", "об обучении"
+        RESIDENCE = "residence", "по месту требования"
+        TAX = "tax", "для налогового вычета"
+        VISA = "visa", "для визы"
+
+    class Delivery(models.TextChoices):
+        ELECTRONIC = "electronic", "Электронно"
+        OFFICE = "office", "Учебный офис"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requests"
     )
     public_number = models.CharField(max_length=32, unique=True, blank=True)
     type = models.CharField("Тип", max_length=16, choices=Type.choices)
+    subtype = models.CharField("Подтип", max_length=16, choices=Subtype.choices, blank=True)
     # Явные колонки вместо произвольного JSON (ARCHITECTURE §4).
-    purpose = models.CharField("Куда предоставляется", max_length=200, blank=True)
+    organization = models.CharField("Организация", max_length=200, blank=True)
+    purpose = models.CharField("Цель предоставления", max_length=200, blank=True)
     content = models.TextField("Текст заявления", blank=True)
     status = models.CharField(
         "Статус", max_length=16, choices=Status.choices, default=Status.SUBMITTED
+    )
+    delivery_method = models.CharField(
+        "Способ получения", max_length=16, choices=Delivery.choices, blank=True
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

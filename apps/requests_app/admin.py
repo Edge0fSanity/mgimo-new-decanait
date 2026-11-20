@@ -77,8 +77,8 @@ class RequestStatusEventInline(admin.TabularInline):
 
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
-    list_display = ("public_number", "type", "owner", "status", "submitted_at")
-    list_filter = ("status", "type")
+    list_display = ("public_number", "type", "subtype", "owner", "status", "submitted_at")
+    list_filter = ("status", "type", "subtype")
     readonly_fields = ("status",)
     actions = [mark_in_progress, mark_ready, mark_rejected]
     inlines = (RequestStatusEventInline,)
