@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ProfileForm
+from .forms import ProfileForm, ThemeForm
 from .models import StudentProfile
 
 
@@ -12,13 +12,24 @@ def profile(request):
     profile = get_object_or_404(StudentProfile, user=request.user)
     initials = "".join(word[0] for word in profile.display_name.split()[:2]).upper()
     if request.method == "POST":
-        form = ProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Контактные данные сохранены")
-            return redirect("profile")
-    else:
-        form = ProfileForm(instance=request.user)
+        if "save_theme" in request.POST:
+            form = ThemeForm(request.POST, instance=profile)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Оформление сохранено")
+        else:
+            form = ProfileForm(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Контактные данные сохранены")
+        return redirect("profile")
     return render(
-        request, "accounts/profile.html", {"profile": profile, "initials": initials, "form": form}
+        request,
+        "accounts/profile.html",
+        {
+            "profile": profile,
+            "initials": initials,
+            "form": ProfileForm(instance=request.user),
+            "theme_form": ThemeForm(instance=profile),
+        },
     )

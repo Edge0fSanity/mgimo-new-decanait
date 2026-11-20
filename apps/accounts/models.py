@@ -19,6 +19,14 @@ class StudentProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     # Предыдущий вход (T19.4): обновляется при входе, прежнее значение уходит в сессию.
     last_seen = models.DateTimeField(null=True, blank=True)
+    # T25: оформление выбирается в профиле и действует на всех устройствах пользователя.
+    class Theme(models.TextChoices):
+        MGIMO = "mgimo", "Корпус МГИМО"
+        LIGHT = "light", "Светлый"
+        DARK = "dark", "Тёмный"
+        NEUTRAL = "neutral", "Нейтральный"
+
+    theme = models.CharField("Оформление", max_length=16, choices=Theme.choices, default=Theme.MGIMO)
 
     class Meta:
         verbose_name = "Профиль студента"

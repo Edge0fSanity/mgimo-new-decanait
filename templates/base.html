@@ -6,7 +6,8 @@
   <title>{% block title %}Кабинет студента МГИМО{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/base.css">
 </head>
-<body>
+{# T25: тема из профиля; у пользователя без профиля (superuser) подставляется mgimo. #}
+<body class="theme-{{ user.student_profile.theme|default:'mgimo' }}">
 <a class="skip-link" href="#main">К основному содержанию</a>
 <header class="site-header">
   <div class="header-content">

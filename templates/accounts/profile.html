@@ -21,5 +21,13 @@
   {{ form.as_p }}
   <button type="submit" class="button">Сохранить</button>
 </form>
+
+<h2>Оформление</h2>
+<form method="post" class="student-form">
+  {% csrf_token %}
+  {{ theme_form.as_p }}
+  <button type="submit" name="save_theme" value="1" class="button secondary">Применить</button>
+</form>
+<p class="hint">Выбор сохраняется в профиле и действует на всех устройствах.</p>
 <p><a href="{% url 'password_change' %}">Сменить пароль</a></p>
 {% endblock %}
