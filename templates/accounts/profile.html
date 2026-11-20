@@ -2,6 +2,7 @@
 {% block title %}Профиль — Деканат{% endblock %}
 {% block content %}
 <h1>Профиль</h1>
+<p class="initials" aria-hidden="true">{{ initials }}</p>
 <dl class="profile">
   <dt>ФИО</dt><dd>{{ profile.display_name }}</dd>
   <dt>Факультет</dt><dd>{{ profile.faculty }}</dd>
@@ -11,8 +12,14 @@
   <dt>Языковая группа</dt><dd>{{ profile.language_group }}</dd>
   <dt>Специализация</dt><dd>{{ profile.specialization|default:"—" }}</dd>
 </dl>
-<form method="post" action="{% url 'logout' %}">
+<p class="hint">Языковая группа и специализация определяют, какие занятия попадают в ваше расписание.
+Нашли ошибку в учебных данных? <a href="{% url 'request_create_kind' 'zayavlenie' %}">Сообщите об ошибке</a> через заявление.</p>
+
+<h2>Контактные данные</h2>
+<form method="post">
   {% csrf_token %}
-  <button type="submit" class="button secondary">Выйти</button>
+  {{ form.as_p }}
+  <button type="submit" class="button">Сохранить</button>
 </form>
+<p><a href="{% url 'password_change' %}">Сменить пароль</a></p>
 {% endblock %}
