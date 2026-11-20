@@ -19,7 +19,7 @@ class SubtypeFormTests(BaseTestCase):
         # Форма одной страницей: шаг подтверждения показывает данные профиля.
         page = client.get(reverse("request_create"))
         self.assertContains(page, "Иванова Анна")
-        self.assertContains(page, "ФМЭП")
+        self.assertContains(page, "МЭО")
         self.assertContains(page, "Способ получения")
 
         response = client.post(reverse("request_create"), CERTIFICATE_DATA)
