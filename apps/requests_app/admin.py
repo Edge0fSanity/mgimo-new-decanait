@@ -64,12 +64,26 @@ def mark_rejected(modeladmin, request, queryset):
     })
 
 
+class RequestStatusEventInline(admin.TabularInline):
+    model = RequestStatusEvent
+    extra = 0
+    can_delete = False
+    readonly_fields = ("from_status", "to_status", "actor", "note", "created_at")
+    verbose_name_plural = "История статусов"
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
     list_display = ("public_number", "type", "owner", "status", "submitted_at")
     list_filter = ("status", "type")
     readonly_fields = ("status",)
     actions = [mark_in_progress, mark_ready, mark_rejected]
+    inlines = (RequestStatusEventInline,)
+    list_select_related = ("owner",)
+    search_fields = ("public_number", "owner__username", "owner__student_profile__display_name")
 
 
 @admin.register(DemoDocument)
