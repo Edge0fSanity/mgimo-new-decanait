@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 
 
 class Announcement(models.Model):
@@ -30,6 +31,15 @@ class Announcement(models.Model):
         # «Группе» без группы не видит никто (фильтр дашборда) — не даём сохранить.
         if self.audience == self.Audience.GROUP and not self.group_id:
             raise ValidationError({"group": "Для аудитории «Группе» укажите группу."})
+
+    @classmethod
+    def visible_to(cls, profile, now):
+        """Объявления, видимые студенту: общие + его группа, не истёкшие."""
+        return (
+            cls.objects.filter(Q(audience=cls.Audience.ALL) | Q(group=profile.base_group))
+            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+            .order_by("-published_at")
+        )
 
     def __str__(self):
         return self.title

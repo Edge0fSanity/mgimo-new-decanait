@@ -110,7 +110,7 @@ class HomeworkTests(TrustBase):
         response = client.post(self.url)
         self.assertRedirects(response, reverse("schedule"))
         deadline = Deadline.objects.get(student=self.user_a.student_profile)
-        self.assertEqual(deadline.title, f"Задание: {self.subject}")
+        self.assertEqual(deadline.title, f"Задание: {self.subject} ({self.entry.starts_at:%d.%m})")
         self.assertEqual(deadline.due_at, self.entry.starts_at)
         client.post(self.url)
         self.assertEqual(Deadline.objects.count(), 1)

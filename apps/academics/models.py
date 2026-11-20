@@ -34,6 +34,13 @@ class Subject(models.Model):
         verbose_name = "Дисциплина"
         verbose_name_plural = "Дисциплины"
 
+    def clean(self):
+        # Веса заданы все три — они должны образовывать полный рейтинг (сумма 1),
+        # иначе калькулятор показывает всем студентам дисциплины неверные числа.
+        weights = (self.weight_current, self.weight_exam, self.weight_social)
+        if all(w is not None for w in weights) and abs(sum(map(float, weights)) - 1) > 0.01:
+            raise ValidationError("Сумма весов блоков должна быть 1 (сейчас %(sum)s)." % {"sum": round(sum(map(float, weights)), 2)})
+
     def __str__(self):
         return self.title
 
@@ -212,7 +219,8 @@ class Deadline(models.Model):
         # Фильтры дашборда (apps/dashboard/views.py): (group | student) и due_at >= now.
         if self.group_id is None and self.student_id is None:
             raise ValidationError("Дедлайн должен быть привязан к группе или студенту, иначе его никто не увидит.")
-        if self.due_at and self.due_at < timezone.now():
+        # Проверка «в прошлом» только при создании: истёкший дедлайн staff должен уметь править.
+        if not self.pk and self.due_at and self.due_at < timezone.now():
             raise ValidationError({"due_at": "Срок не может быть в прошлом — такой дедлайн никто не увидит."})
 
     def __str__(self):

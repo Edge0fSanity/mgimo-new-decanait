@@ -12,8 +12,6 @@ from apps.accounts.models import StudentProfile
 
 from .models import Deadline, Exam, Grade, ScheduleEntry, Subject, percent_to_mark
 
-DAY_TITLES = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
-
 # Соц. блок (0,1) нигде не вводится — считаем зачтённым (100%).
 SOCIAL_PERCENT = 100
 
@@ -25,6 +23,11 @@ def _avg(values):
     return sum(values) / len(values) if values else None
 
 
+def _base_percent(subject, current_avg):
+    """Накопленный процент без сессии: текущий контроль + соц. блок."""
+    return float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
+
+
 def _rating(subject, current_avg, exam_percent):
     """Итоговый процент по формуле положения: (процент, финальный) или None.
 
@@ -32,7 +35,7 @@ def _rating(subject, current_avg, exam_percent):
     """
     if subject.weight_current is None or subject.weight_exam is None or current_avg is None:
         return None
-    base = float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
+    base = _base_percent(subject, current_avg)
     if exam_percent is None:
         return base, False
     return base + float(subject.weight_exam) * exam_percent, True
@@ -89,7 +92,6 @@ def schedule(request):
         days.append(
             {
                 "date": day,
-                "title": DAY_TITLES[day.weekday()],
                 "entries": day_entries,
                 "is_today": day == today,
             }
@@ -184,7 +186,7 @@ def subject_detail(request, pk):
     if subject.weight_current is not None and subject.weight_exam is not None and current_avg is not None:
         weights_set = True
         w_exam = float(subject.weight_exam)
-        base = float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
+        base = _base_percent(subject, current_avg)
         for goal, label in RATING_GOALS:
             needed = (goal - base) / w_exam
             if needed <= 0:
@@ -265,7 +267,9 @@ def add_homework_deadline(request, pk):
     )
     Deadline.objects.get_or_create(
         student=profile,
-        title=f"Задание: {entry.subject}",
+        # Дата занятия в заголовке: иначе второе задание по тому же предмету
+        # найдёт первый дедлайн и не создастся.
+        title=f"Задание: {entry.subject} ({entry.starts_at:%d.%m})",
         defaults={"due_at": entry.starts_at},
     )
     return redirect("schedule")
@@ -279,8 +283,7 @@ def exam_percent_needed(subject, current_avg, goal=75):
     """
     if subject.weight_current is None or subject.weight_exam is None or current_avg is None:
         return None
-    base = float(subject.weight_current) * current_avg + float(subject.weight_social or 0) * SOCIAL_PERCENT
-    needed = (goal - base) / float(subject.weight_exam)
+    needed = (goal - _base_percent(subject, current_avg)) / float(subject.weight_exam)
     if needed <= 0 or needed > 100:
         return None
     return math.ceil(needed)

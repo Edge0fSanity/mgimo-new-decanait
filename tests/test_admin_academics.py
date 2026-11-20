@@ -1,5 +1,6 @@
 """Тесты admin-ввода academics (T6/T9/T10): clean()-валидация и семантика переноса."""
 from datetime import timedelta
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.contrib import admin
@@ -30,6 +31,29 @@ class ScheduleEntryCleanTests(BaseTestCase):
         self.assertIn("ends_at", cm.exception.message_dict)
 
 
+class SubjectWeightsCleanTests(BaseTestCase):
+    """Веса блоков заданы все три — сумма должна быть 1, иначе калькуляр врёт."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.subject = Subject.objects.create(title="Тестовый предмет весов")
+
+    def test_weights_sum_not_one_rejected(self):
+        self.subject.weight_current, self.subject.weight_exam, self.subject.weight_social = Decimal("0.5"), Decimal("0.5"), Decimal("0.1")
+        with self.assertRaises(ValidationError):
+            self.subject.full_clean()
+
+    def test_weights_sum_one_ok(self):
+        self.subject.weight_current, self.subject.weight_exam, self.subject.weight_social = Decimal("0.5"), Decimal("0.4"), Decimal("0.1")
+        self.subject.full_clean()  # не бросает
+
+    def test_partial_weights_not_checked(self):
+        # Пока заданы не все три — проверка не применяется (схема ещё настраивается).
+        self.subject.weight_current, self.subject.weight_exam, self.subject.weight_social = Decimal("0.5"), None, None
+        self.subject.full_clean()  # не бросает
+
+
 class DeadlineCleanTests(BaseTestCase):
     """Фильтры дашборда: (group | student) и due_at >= now — иначе дедлайн никто не увидит."""
 
@@ -45,6 +69,14 @@ class DeadlineCleanTests(BaseTestCase):
         with self.assertRaises(ValidationError) as cm:
             deadline.full_clean()
         self.assertIn("due_at", cm.exception.message_dict)
+
+    def test_past_due_at_editable_after_creation(self):
+        # Истёкший дедлайн staff должен уметь править (опечатка в названии и т.п.).
+        group = Group.objects.get(code="МЭО-01")
+        deadline = Deadline.objects.create(group=group, title="Истёкший", due_at=timezone.now() - timedelta(days=1))
+        deadline.title = "Истёкший (исправлено)"
+        deadline.full_clean()  # не бросает
+        deadline.save()
 
 
 class ScheduleEntryAdminSaveTests(BaseTestCase):

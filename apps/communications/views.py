@@ -1,5 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -44,11 +43,5 @@ def notification_read(request, pk):
 def announcements(request):
     """Архив объявлений (T4): тот же фильтр аудитории, что на главной."""
     profile = get_object_or_404(StudentProfile, user=request.user)
-    items = (
-        Announcement.objects.filter(
-            Q(audience=Announcement.Audience.ALL) | Q(group=profile.base_group)
-        )
-        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
-        .order_by("-published_at")
-    )
+    items = Announcement.visible_to(profile, timezone.now())
     return render(request, "communications/announcements.html", {"announcements": items})

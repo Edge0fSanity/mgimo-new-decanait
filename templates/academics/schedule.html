@@ -16,7 +16,7 @@
 </nav>
 {% for day in days %}
   <section class="day{% if day.is_today %} current-day{% endif %}"{% if day.is_today %} id="schedule-today" tabindex="-1"{% endif %}>
-    <h2>{{ day.title }}{% if day.is_today %} (сегодня){% endif %}, {{ day.date|date:"d.m.Y" }}</h2>
+    <h2>{{ day.date|date:"l" }}{% if day.is_today %} (сегодня){% endif %}, {{ day.date|date:"d.m.Y" }}</h2>
     {% if day.entries %}
       <ul class="entries">
         {% for e in day.entries %}
