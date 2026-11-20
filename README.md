@@ -46,6 +46,16 @@
 
 Навигация перестроена по UI_SPEC: 5 разделов «Сегодня / Расписание / Учёба / Заявки / Профиль» + колокольчик уведомлений (инлайн-SVG, без CDN), активный раздел помечен (aria-current). На ≤700px — нижняя навигация одним рядом; «Выход» перенесён на страницу профиля. Добавлены min-height 44px у целей касания, :focus-visible, skip-link, стили ошибок форм; переключатель Оценки/Экзамены/Дедлайны сделал маршруты /exams/ и /deadlines/ достижимыми из навигации. Скриншоты 360/1440 px — evidence/screenshots/a03_*.png; горизонтального скролла на 360 px нет (scrollWidth==clientWidth). 26 тестов OK. Формальный PASS D-Q08 — за независимым QA (A04).
 
+# Служебный интерфейс (admin)
+
+Django Admin — /admin/, заголовок «Цифровой деканат — служебный интерфейс». Демо-сотрудник demo_staff (создаётся seed_demo) имеет ограниченные права: заявки, объявления, дедлайны; оценок и экзаменов там нет.
+
+Суперпользователь (для эксплуатации, не для демо-сотрудника):
+
+    uv run python manage.py createsuperuser
+
+Восстановление доступа: при утере пароля суперпользователя — `uv run python manage.py changepassword <username>` (или `python manage.py shell` + `user.set_password(...)`/`save()` для любого служебного аккаунта); при утере имени — `uv run python manage.py shell -c "from django.contrib.auth import get_user_model; print('\\n'.join(u.username for u in get_user_model().objects.filter(is_superuser=True)))"`. Пароли передавать только защищённым каналом, в Git и evidence не включать.
+
 # 
 
 # 00 README — Деканат · паспорт и план
