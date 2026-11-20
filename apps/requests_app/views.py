@@ -44,11 +44,33 @@ def request_create(request, kind="spravka"):
             return redirect("request_detail", pk=obj.pk)
     else:
         form = RequestForm(type_value)
+    # Профиль только для показа на шаге подтверждения; отсутствие профиля не ломает форму.
+    profile = request.user.student_profile if hasattr(request.user, "student_profile") else None
     return render(
         request,
         "requests_app/request_form.html",
-        {"form": form, "kind": kind, "title": title},
+        {"form": form, "kind": kind, "title": title, "profile": profile},
     )
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_cancel(request, pk):
+    # Отменить можно только свою заявку и только пока она не взята в работу.
+    obj = get_object_or_404(
+        StudentRequest, pk=pk, owner=request.user, status=StudentRequest.Status.SUBMITTED
+    )
+    with transaction.atomic():
+        obj.status = StudentRequest.Status.CANCELLED
+        obj.save(update_fields=["status", "updated_at"])
+        RequestStatusEvent.objects.create(
+            request=obj,
+            from_status=StudentRequest.Status.SUBMITTED,
+            to_status=obj.status,
+            actor=request.user,
+            note="Заявка отменена студентом",
+        )
+    return redirect("request_detail", pk=obj.pk)
 
 
 @login_required

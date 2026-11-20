@@ -18,7 +18,10 @@ from .base import TEST_PASSWORD, BaseTestCase
 class PersistenceTests(BaseTestCase):
     def test_request_survives_relogin_and_restart(self):
         client = self.login(self.user_a)
-        response = client.post(reverse("request_create"), {"type": "certificate", "purpose": "Деканат"})
+        response = client.post(reverse("request_create"), {
+            "type": "certificate", "subtype": "study", "organization": "Деканат",
+            "purpose": "Деканат", "delivery_method": "electronic",
+        })
         obj = self.user_a.requests.get()
 
         # Симуляция перезапуска процесса: закрываем соединение, читаем БД заново.
@@ -35,7 +38,10 @@ class PersistenceTests(BaseTestCase):
 
     def test_seed_is_idempotent_and_keeps_user_requests(self):
         client = self.login(self.user_a)
-        client.post(reverse("request_create"), {"type": "certificate", "purpose": "Моя заявка"})
+        client.post(reverse("request_create"), {
+            "type": "certificate", "subtype": "study", "organization": "Моя организация",
+            "purpose": "Моя заявка", "delivery_method": "electronic",
+        })
         user_request = self.user_a.requests.get()
 
         env = {"DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD, "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD, "DEMO_STAFF_PASSWORD": TEST_PASSWORD}

@@ -10,24 +10,21 @@ class RequestForm(forms.ModelForm):
         self.kind = kind
         self.fields["type"].required = False
         if kind == StudentRequest.Type.APPLICATION:
-            del self.fields["purpose"]
+            for field in ("subtype", "organization", "purpose"):
+                del self.fields[field]
+            self.fields["content"].required = True
         else:
             del self.fields["content"]
+            # Обязательность на поле: ошибка показывается у конкретного поля до отправки.
+            for field in ("subtype", "organization", "purpose", "delivery_method"):
+                self.fields[field].required = True
 
     class Meta:
         model = StudentRequest
-        fields = ["type", "purpose", "content"]
+        fields = ["type", "subtype", "organization", "purpose", "content", "delivery_method"]
         widgets = {
             "type": forms.HiddenInput,
+            "organization": forms.TextInput(attrs={"size": 40}),
             "purpose": forms.TextInput(attrs={"size": 40}),
             "content": forms.Textarea(attrs={"rows": 4}),
         }
-
-    def clean(self):
-        cleaned = super().clean()
-        # owner и status здесь не принимаются: их задаёт только сервер.
-        if self.kind == StudentRequest.Type.CERTIFICATE and not cleaned.get("purpose"):
-            self.add_error("purpose", "Укажите, куда предоставляется справка.")
-        if self.kind == StudentRequest.Type.APPLICATION and not cleaned.get("content"):
-            self.add_error("content", "Введите текст заявления.")
-        return cleaned

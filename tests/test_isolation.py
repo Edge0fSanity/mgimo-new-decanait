@@ -6,7 +6,11 @@ from .base import BaseTestCase
 
 
 def create_request(client, kind="spravka", **overrides):
-    data = {"purpose": "Военный учебный центр", "content": ""}
+    data = {
+        "subtype": "study", "organization": "Военный учебный центр",
+        "purpose": "Для военного учебного центра", "delivery_method": "electronic",
+        "content": "",
+    }
     data.update(overrides)
     url = reverse("request_create") if kind == "spravka" else reverse("request_create_kind", args=[kind])
     return client.post(url, data)
