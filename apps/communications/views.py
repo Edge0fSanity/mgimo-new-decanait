@@ -30,6 +30,7 @@ def notification_read_all(request):
 
 
 @login_required
+@require_http_methods(["POST"])
 def notification_read(request, pk):
     # Чужое уведомление не существует для этого пользователя: 404 без содержимого.
     obj = get_object_or_404(Notification, pk=pk, recipient=request.user)
