@@ -7,14 +7,18 @@ from apps.academics.models import (
     Exam,
     Grade,
     Group,
+    Room,
     ScheduleEntry,
     Subject,
+    VacationPeriod,
 )
 
 admin.site.register(Group)
 admin.site.register(Grade)
 admin.site.register(Exam)
 admin.site.register(Deadline)
+admin.site.register(Room)
+admin.site.register(VacationPeriod)
 
 
 class CurrentControlElementInline(admin.TabularInline):

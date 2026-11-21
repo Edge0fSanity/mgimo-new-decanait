@@ -7,7 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
-from apps.academics.models import Deadline, ScheduleEntry, Subject
+
+from apps.academics.models import Deadline, ScheduleEntry, Subject, VacationPeriod
 from apps.academics.views import exam_percent_needed
 from apps.communications.models import Announcement, Notification
 from apps.requests_app.models import StudentRequest
@@ -69,6 +70,9 @@ def home(request):
         .first()
     )
     announcements = Announcement.visible_to(profile, now)[:3]
+    # Каникулы (ревью п.17–18): ближайший период; баннер — за 7 дней и во время.
+    vacation = VacationPeriod.objects.filter(ends_at__gte=today).order_by("starts_at").first()
+    vacation_days_left = (vacation.starts_at - today).days if vacation else None
     return render(
         request,
         "dashboard/home.html",
@@ -81,5 +85,14 @@ def home(request):
             "rating_hint": _rating_hint(profile, now),
             "active_request": active_request,
             "announcements": announcements,
+            "vacation": vacation,
+            "vacation_days_left": vacation_days_left,
         },
     )
+
+
+@login_required
+def map(request):
+    """Статичная схема корпуса (ревью п.15); страница общая, персональных данных нет."""
+    get_object_or_404(StudentProfile, user=request.user)
+    return render(request, "dashboard/map.html")

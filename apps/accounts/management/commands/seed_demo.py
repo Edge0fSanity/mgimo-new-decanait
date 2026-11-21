@@ -9,7 +9,7 @@ DEMO_STUDENT_B_PASSWORD; если не заданы — генерируются
 """
 import os
 import secrets
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
@@ -26,10 +26,13 @@ from apps.academics.models import (
     Exam,
     Grade,
     Group,
+    Room,
     ScheduleEntry,
     Subject,
+    VacationPeriod,
 )
 from apps.communications.models import Announcement, Notification
+from apps.dashboard.models import ExternalLink
 from apps.requests_app.models import DemoDocument, RequestStatusEvent, StudentRequest
 
 BASE_DIR = Path(__file__).resolve().parents[4]
@@ -56,8 +59,15 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         User = get_user_model()
+        # Код в формате МГИМО «<курс><факультет>-<академическая>-<языковая>» (ревью п.2);
+        # старый демо-код «МЭО-01» переименовывается при повторном seed, но только
+        # если новый код ещё не занят — иначе UNIQUE constraint роняет весь seed.
+        if not Group.objects.filter(code="1МЭО-01-01").exists():
+            Group.objects.filter(code="МЭО-01").update(
+                code="1МЭО-01-01", title="Международные экономические отношения, 1 курс"
+            )
         group, _ = Group.objects.get_or_create(
-            code="МЭО-01", defaults={"title": "Международные экономические отношения, 1 курс"}
+            code="1МЭО-01-01", defaults={"title": "Международные экономические отношения, 1 курс"}
         )
         subjects = {}
         for title in ["Микроэкономика", "Иностранный язык", "История международных отношений", "Математический анализ"]:
@@ -87,16 +97,16 @@ class Command(BaseCommand):
             )
 
         specs = [
-            ("demo_a", "Иванова Анна", "МЭО", "Международные экономические отношения", 1, "EN-1", "Мировая экономика"),
-            ("demo_b", "Петров Борис", "МЭО", "Международные экономические отношения", 1, "EN-2", "Международные финансы"),
+            ("demo_a", "Иванова Анна Сергеевна", "МЭО", "Международные экономические отношения", 1, "EN-1", "Мировая экономика"),
+            ("demo_b", "Петров Борис Игоревич", "МЭО", "Международные экономические отношения", 1, "EN-2", "Международные финансы"),
         ]
         users = {}
         for username, name, faculty, program, year, lang, spec in specs:
             user, created = User.objects.get_or_create(username=username)
             if created:
                 user.set_password(_password(f"DEMO_STUDENT_{username[-1].upper()}_PASSWORD", username))
-                user.first_name = name.split()[0]
-                user.last_name = name.split()[1]
+                user.first_name = name.split()[1]
+                user.last_name = name.split()[0]
                 user.save()
             StudentProfile.objects.update_or_create(
                 user=user,
@@ -111,7 +121,68 @@ class Command(BaseCommand):
                 },
             )
             users[username] = user
+
+        # Одногруппники для страницы «Моя группа» (ревью п.16): вход им не нужен,
+        # пароль unusable — заведены, чтобы демо-группа не была из двух человек.
+        for i, name in enumerate(
+            ["Смирнова Мария Андреевна", "Кузьмин Дмитрий Олегович", "Орлова Елена Викторовна"], start=1
+        ):
+            classmate, created = User.objects.get_or_create(username=f"demo_group_{i}")
+            if created:
+                classmate.set_unusable_password()
+                classmate.first_name = name.split()[1]
+                classmate.last_name = name.split()[0]
+                classmate.save()
+            StudentProfile.objects.update_or_create(
+                user=classmate,
+                defaults={
+                    "display_name": name,
+                    "faculty": "МЭО",
+                    "program": "Международные экономические отношения",
+                    "year": 1,
+                    "base_group": group,
+                    "language_group": "EN-1",
+                    "specialization": "Мировая экономика",
+                },
+            )
         self.stdout.write("Аккаунты и профили готовы")
+
+        # Справочник аудиторий корпуса (ревью п.14): те же, что в плане расписания.
+        for room in ["Ауд. 301", "Ауд. 112", "Ауд. 118", "Ауд. 205", "Ауд. 401", "Ауд. 210"]:
+            Room.objects.get_or_create(name=room)
+
+        # Каникулы (ревью п.17–18): демо-период рядом с «сегодня», чтобы баннер
+        # напоминания был виден (при повторном seed поднимается, как дедлайны),
+        # плюс зимние/летние по образцу памятки для иностранных студентов МГИМО —
+        # заменить датами приказа.
+        today = timezone.localdate()
+        VacationPeriod.objects.update_or_create(
+            title="Каникулы (демо)",
+            defaults={"starts_at": today + timedelta(days=5), "ends_at": today + timedelta(days=12)},
+        )
+        VacationPeriod.objects.get_or_create(
+            title="Зимние каникулы 2026/27",
+            defaults={"starts_at": date(2027, 1, 26), "ends_at": date(2027, 2, 6)},
+        )
+        VacationPeriod.objects.get_or_create(
+            title="Летние каникулы 2027",
+            defaults={"starts_at": date(2027, 6, 25), "ends_at": date(2027, 8, 31)},
+        )
+
+        # Полезные ссылки (ревью п.10, п.12): Moodle и библиотека — заглушки «#»,
+        # пока реальные адреса не проверены; кафедры МЭО — найдены поиском,
+        # открытием страниц не проверены.
+        for i, (title, url) in enumerate(
+            [
+                ("Moodle МГИМО", "#"),
+                ("Библиотека МГИМО", "#"),
+                ("Кафедра МЭО и ВЭС", "https://mgimo.ru/study/faculty/meo/kmeovs/"),
+                ("Кафедра экономической теории", "https://mgimo.ru/study/faculty/meo/ket/"),
+            ]
+        ):
+            ExternalLink.objects.update_or_create(
+                title=title, defaults={"url": url, "sort_order": i, "is_active": True}
+            )
 
         # Расписание текущей недели (Пн..Пт): общие пары + пары языковых групп.
         now = timezone.localtime()
@@ -272,6 +343,8 @@ class Command(BaseCommand):
                     "view_studentrequest", "change_studentrequest",
                     "add_announcement", "change_announcement", "view_announcement",
                     "add_deadline", "change_deadline", "view_deadline",
+                    "add_vacationperiod", "change_vacationperiod", "view_vacationperiod",
+                    "add_externallink", "change_externallink", "view_externallink",
                     "add_group", "change_group", "view_group",
                     "add_subject", "change_subject", "view_subject",
                     "add_scheduleentry", "change_scheduleentry", "view_scheduleentry",

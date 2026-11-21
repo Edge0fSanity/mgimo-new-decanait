@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Моя группа — Деканат{% endblock %}
+{% block content %}
+<h1>Моя группа</h1>
+<p class="context">{{ profile.base_group.code_description }} · {{ classmates|length }} чел.</p>
+<ul class="entries">
+  {% for classmate in classmates %}
+  <li class="entry">
+    <span class="subject">{{ classmate.display_name }}{% if classmate.pk == profile.pk %} · вы{% endif %}</span>
+    <span class="meta">языковая {{ classmate.language_group|default:"—" }}</span>
+  </li>
+  {% empty %}
+  <li class="entry"><span class="meta">В группе пока нет других студентов</span></li>
+  {% endfor %}
+</ul>
+{% endblock %}

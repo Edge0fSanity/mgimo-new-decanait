@@ -1,6 +1,7 @@
 """Тесты T21: профиль — инициалы, учебные данные только просмотр, факультет МЭО, смена пароля."""
 from pathlib import Path
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
@@ -35,6 +36,40 @@ class ProfileViewTests(BaseTestCase):
         self.assertRedirects(response, reverse("profile"))
         self.user_a.refresh_from_db()
         self.assertEqual(self.user_a.email, "anna@example.com")
+
+    def test_group_code_components(self):
+        # Ревью п.2: код «4МЭО-03-21» = 4 курс МЭО, 3 академическая группа, 21 языковая.
+        from apps.academics.models import Group
+
+        self.assertEqual(
+            Group(code="4МЭО-03-21").code_description,
+            "4МЭО-03-21 · 4 курс · академическая 03 · языковая 21",
+        )
+        self.assertEqual(Group(code="МЭО-01").code_description, "МЭО-01")
+        client = self.login(self.user_a)
+        self.assertContains(client.get(reverse("profile")), "академическая 01")
+
+
+    def test_login_section_shows_username(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("profile"))
+        self.assertContains(page, "Вход и пароль")
+        self.assertContains(page, self.user_a.username)
+
+
+class MyGroupTests(BaseTestCase):
+    def test_lists_own_group_marks_self(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("my_group"))
+        self.assertContains(page, "Иванова Анна · вы")
+        self.assertContains(page, "Петров Борис")
+        self.assertNotContains(page, "Смирнова")  # seed-одногруппники в тестовую базу не сеются
+
+    def test_user_without_profile_404(self):
+        User = get_user_model()
+        staff = User.objects.create_user("no_profile", password=TEST_PASSWORD)
+        response = self.login(staff).get(reverse("my_group"))
+        self.assertEqual(response.status_code, 404)
 
 
 class PasswordChangeTests(BaseTestCase):

@@ -37,5 +37,13 @@
   {% endif %}
   {% block content %}{% endblock %}
 </main>
+<footer class="site-links">
+  <span class="meta">Полезные ссылки:</span>
+  {% for link in useful_links %}
+    {# url «#» — заглушка, пока реальный адрес не проверен (ревью п.10). #}
+    {% if link.url == '#' %}<span class="meta">{{ link.title }}</span>
+    {% else %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>{% endif %}
+  {% endfor %}
+</footer>
 </body>
 </html>

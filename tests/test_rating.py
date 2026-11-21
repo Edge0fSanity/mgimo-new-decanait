@@ -74,8 +74,8 @@ class CalculatorTests(CalculatorBase):
     def test_empty_cell_is_not_zero(self):
         client = self.login(self.user_a)
         page = client.get(reverse("subject_detail", args=[self.subject.pk]))
-        self.assertContains(page, "не внесено")
-        self.assertContains(page, "Прогноз предварительный: не внесено оценок — 1")
+        self.assertContains(page, "Не внесено")
+        self.assertContains(page, "Не внесено оценок — 1")
 
     def test_no_weights_shows_only_accumulated(self):
         client = self.login(self.user_a)
@@ -102,8 +102,10 @@ class GradesSummaryTests(CalculatorBase):
     def test_summary_and_card_states(self):
         client = self.login(self.user_a)
         page = client.get(reverse("grades"))
-        self.assertContains(page, "Средний рейтинг")
-        self.assertContains(page, "прогноз предварительный")
+        self.assertContains(page, "Сводка семестра")
+        self.assertContains(page, "grades-summary-percent")
+        self.assertContains(page, "не внесено оценок — 1")
+        self.assertNotContains(page, "прогноз")
         self.assertContains(page, "Зачёт получен")
 
 

@@ -9,12 +9,19 @@
   <a href="{% url 'grades' %}" class="active" aria-current="page">Оценки</a>
   <a href="{% url 'exams' %}">Экзамены</a>
   <a href="{% url 'deadlines' %}">Дедлайны</a>
+  <a href="{% url 'free_rooms' %}">Аудитории</a>
 </nav>
 {% if summary %}
-<div class="entry summary-card">
+<div class="entry summary-card grades-summary">
   <h2>Сводка семестра</h2>
-  <p><span class="summary-title">Средний рейтинг: {{ summary.percent }}% · {{ summary.mark }}</span>
-     · дисциплин: {{ summary.subjects }} · задолженности: {{ summary.debts }}</p>
+  <div class="grades-summary-hero">
+    <span class="grades-summary-percent">{{ summary.percent }}%</span>
+    <span class="grades-summary-mark">{{ summary.mark }}</span>
+  </div>
+  <div class="grades-summary-stats">
+    <div><span class="grades-summary-num">{{ summary.subjects }}</span><span class="meta">дисциплин</span></div>
+    <div><span class="grades-summary-num{% if summary.debts %} grades-summary-debts{% endif %}">{{ summary.debts }}</span><span class="meta">задолженности</span></div>
+  </div>
 </div>
 {% endif %}
 {% if cards %}
@@ -45,7 +52,7 @@
       {% endif %}
     {% endif %}
     {% if c.rating %}
-    <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %} · прогноз предварительный{% if c.missing_count %}: не внесено оценок — {{ c.missing_count }}{% endif %}{% endif %}</span>
+    <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %}{% if c.missing_count %} · не внесено оценок — {{ c.missing_count }} (пустая клетка не считается нулём){% endif %}{% endif %}</span>
     {% elif c.current_avg %}
     <span class="meta">Текущий контроль: {{ c.current_avg }}% · схема оценивания не задана</span>
     {% endif %}

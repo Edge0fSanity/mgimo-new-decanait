@@ -10,6 +10,12 @@
   </div>
   <p class="context"><time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"l, j E"|capfirst }} · МСК</time> <span>Группа {{ profile.base_group.code }}</span></p>
 </div>
+{% if vacation and vacation_days_left <= 7 %}
+<p class="vacation-banner" role="status">
+  {% if vacation_days_left <= 0 %}{{ vacation.title }}: каникулы идут до {{ vacation.ends_at|date:"j E" }}
+  {% else %}{{ vacation.title }}: каникулы с {{ vacation.starts_at|date:"j E" }} по {{ vacation.ends_at|date:"j E" }}{% endif %}
+</p>
+{% endif %}
 <div class="today-board">
   {% with e=next_entry %}
   <section class="next-class{% if not e %} next-class-empty{% endif %}" aria-labelledby="next-class-title">
@@ -25,7 +31,7 @@
         </div>
         <div class="class-information">
           <p class="class-subject">{{ e.subject }}</p>
-          <p class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span></p>
+          <p class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span> <a href="{% url 'campus_map' %}">карта</a></p>
         </div>
       </div>
       {% include "academics/_schedule_change.html" with entry=e only %}
@@ -57,14 +63,21 @@
       {% endif %}
     </section>
     <section class="summary-row">
-      <h2>Прогноз оценки</h2>
+      <h2>Сколько нужно набрать</h2>
       {% if rating_hint %}
         <div class="summary-record">
           <p class="summary-title"><a href="{% url 'subject_detail' rating_hint.subject.pk %}">{{ rating_hint.subject }}</a></p>
           <strong class="summary-percent">{{ rating_hint.needed }}%</strong>
         </div>
         <p class="meta">Столько нужно на экзамене до «хорошо»</p>
-      {% else %}<p class="empty">Данных для прогноза пока нет</p>{% endif %}
+      {% else %}<p class="empty">Данных для расчёта пока нет</p>{% endif %}
+    </section>
+    <section class="summary-row">
+      <h2>Ближайшие каникулы</h2>
+      {% if vacation %}
+        <p class="summary-title">{{ vacation.title }}</p>
+        <p class="meta">с {{ vacation.starts_at|date:"j E" }} по {{ vacation.ends_at|date:"j E" }}</p>
+      {% else %}<p class="empty">Даты каникул не заданы</p>{% endif %}
     </section>
   </div>
 </div>

@@ -10,7 +10,7 @@ TEST_PASSWORD = "Test-Password-2026!"
 
 
 def make_student(username, name, lang, spec):
-    group, _ = Group.objects.get_or_create(code="МЭО-01", defaults={"title": "Тестовая группа"})
+    group, _ = Group.objects.get_or_create(code="1МЭО-01-01", defaults={"title": "Тестовая группа"})
     user = get_user_model().objects.create_user(username, password=TEST_PASSWORD, first_name=name.split()[0], last_name=name.split()[1])
     StudentProfile.objects.create(
         user=user, display_name=name, faculty="МЭО",
