@@ -154,35 +154,40 @@ class Command(BaseCommand):
         # Каникулы (ревью п.17–18): демо-период рядом с «сегодня», чтобы баннер
         # напоминания был виден (при повторном seed поднимается, как дедлайны).
         # Зимние 25–31.01.2027 — из официального календарного графика МГИМО
-        # (разбор PDF, docs/mgimo-kug-meo-2026.pdf); летние — образец, в графике
-        # июнь–август занят практикой, точные даты сверить по приказу.
+        # (разбор PDF, docs/mgimo-kug-meo-2026.pdf); в title указаны факультет
+        # и набор (ревью P1-6). Летние даты — неподтверждённый образец, не сеем;
+        # запись со старыми датами удаляем, чтобы не выдавать их за график.
         today = timezone.localdate()
         VacationPeriod.objects.update_or_create(
             title="Каникулы (демо)",
             defaults={"starts_at": today + timedelta(days=5), "ends_at": today + timedelta(days=12)},
         )
+        winter_title = "Зимние каникулы 2026/27 (МЭО, набор 2026)"
+        if not VacationPeriod.objects.filter(title=winter_title).exists():
+            # Переименование старой записи, чтобы повторный seed не задублировал период.
+            VacationPeriod.objects.filter(title="Зимние каникулы 2026/27").update(title=winter_title)
         VacationPeriod.objects.get_or_create(
-            title="Зимние каникулы 2026/27",
+            title=winter_title,
             defaults={"starts_at": date(2027, 1, 25), "ends_at": date(2027, 1, 31)},
         )
-        VacationPeriod.objects.get_or_create(
-            title="Летние каникулы 2027",
-            defaults={"starts_at": date(2027, 6, 25), "ends_at": date(2027, 8, 31)},
-        )
+        VacationPeriod.objects.filter(
+            title="Летние каникулы 2027", starts_at=date(2027, 6, 25), ends_at=date(2027, 8, 31)
+        ).delete()
 
         # Полезные ссылки (ревью п.10, п.12): Moodle и библиотека — заглушки «#»,
-        # пока реальные адреса не проверены. Из найденных страниц кафедр МЭО
+        # пока реальные адреса не проверены; до этого скрываются полностью
+        # (is_active=False, ревью P1-6). Из найденных страниц кафедр МЭО
         # открывается только кафедра английского языка №2 — остальные адреса
         # битые (сервер отдаёт 500), ждём корректный список.
-        for i, (title, url) in enumerate(
+        for i, (title, url, is_active) in enumerate(
             [
-                ("Moodle МГИМО", "#"),
-                ("Библиотека МГИМО", "#"),
-                ("Кафедра английского языка №2", "https://mgimo.ru/study/faculty/meo/eng2/"),
+                ("Moodle МГИМО", "#", False),
+                ("Библиотека МГИМО", "#", False),
+                ("Кафедра английского языка №2", "https://mgimo.ru/study/faculty/meo/eng2/", True),
             ]
         ):
             ExternalLink.objects.update_or_create(
-                title=title, defaults={"url": url, "sort_order": i, "is_active": True}
+                title=title, defaults={"url": url, "sort_order": i, "is_active": is_active}
             )
 
         # Расписание текущей недели (Пн..Пт): общие пары + пары языковых групп.

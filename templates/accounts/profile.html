@@ -12,7 +12,7 @@
   <dt>Факультет</dt><dd>{{ profile.faculty }}</dd>
   <dt>Направление</dt><dd>{{ profile.program }}</dd>
   <dt>Курс</dt><dd>{{ profile.year }}</dd>
-  <dt>Основная группа</dt><dd>{{ profile.base_group.code_description }}</dd>
+  <dt>Академическая группа</dt><dd>{{ profile.base_group.code }}</dd>
   <dt>Языковая группа</dt><dd>{{ profile.language_group }}</dd>
   <dt>Специализация</dt><dd>{{ profile.specialization|default:"—" }}</dd>
 </dl>
@@ -52,7 +52,7 @@
 <dl class="profile">
   <dt>Логин</dt><dd>{{ request.user.username }}</dd>
 </dl>
-<p class="hint">Пароль выдан деканатом при первом входе. Если забыли пароль — обратитесь в учебный офис для сброса.
+<p class="hint">Доступ выдаёт команда демо.
 Пароли в открытом виде не хранятся и не показываются.</p>
 <p><a href="{% url 'password_change' %}">Сменить пароль</a></p>
 <form method="post" action="{% url 'logout' %}" class="actions">{% csrf_token %}
