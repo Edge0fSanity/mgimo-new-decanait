@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -6,8 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from .forms import RequestForm
-from .models import DemoDocument, RequestStatusEvent, StudentRequest
+from .forms import MaintenanceForm, RequestForm
+from .models import DemoDocument, MaintenanceRequest, RequestStatusEvent, StudentRequest
 
 # Две формы заявки: тип задаёт URL, не студент.
 KINDS = {
@@ -116,6 +117,30 @@ def request_detail(request, pk):
             "rejection": rejection,
             "documents": obj.documents.filter(owner=request.user),
         },
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def maintenance(request):
+    """Заявки на обслуживание кабинетов (ревью п.13): форма + свои заявки."""
+    entries = MaintenanceRequest.objects.filter(owner=request.user).select_related("room")
+    if request.method == "POST":
+        form = MaintenanceForm(request.POST)
+        if form.is_valid():
+            # Владелец и статус задаёт только сервер, из request.user.
+            obj = form.save(commit=False)
+            obj.owner = request.user
+            obj.status = MaintenanceRequest.Status.SUBMITTED
+            obj.save()
+            messages.success(request, "Заявка отправлена в хозяйственный отдел")
+            return redirect("maintenance")
+    else:
+        form = MaintenanceForm()
+    return render(
+        request,
+        "requests_app/maintenance.html",
+        {"form": form, "entries": entries},
     )
 
 

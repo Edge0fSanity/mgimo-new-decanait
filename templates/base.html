@@ -19,6 +19,7 @@
       <a href="{% url 'schedule' %}?view=week" {% if '/schedule' in request.path %}class="active" aria-current="page"{% endif %}>Расписание</a>
       <a href="{% url 'grades' %}" {% if '/grades' in request.path or '/exams' in request.path or '/deadlines' in request.path %}class="active" aria-current="page"{% endif %}>Учёба</a>
       <a href="{% url 'request_list' %}" {% if '/requests' in request.path %}class="active" aria-current="page"{% endif %}>Заявки</a>
+      <a href="{% url 'maintenance' %}" {% if '/maintenance' in request.path %}class="active" aria-current="page"{% endif %}>Обслуживание</a>
       <a href="{% url 'profile' %}" {% if '/profile' in request.path %}class="active" aria-current="page"{% endif %}>Профиль</a>
     </nav>
     <a class="bell{% if '/notifications' in request.path %} active{% endif %}" href="{% url 'notifications' %}" aria-label="Уведомления" {% if '/notifications' in request.path %}aria-current="page"{% endif %}>

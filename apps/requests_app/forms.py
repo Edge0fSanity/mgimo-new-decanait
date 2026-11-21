@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import StudentRequest
+from .models import MaintenanceRequest, StudentRequest
 
 
 class RequestForm(forms.ModelForm):
@@ -35,3 +35,20 @@ class RequestForm(forms.ModelForm):
             "purpose": forms.TextInput(attrs={"size": 40}),
             "content": forms.Textarea(attrs={"rows": 4}),
         }
+
+
+class MaintenanceForm(forms.ModelForm):
+    # T48: заявка на обслуживание кабинета; владелец и статус подставляет view.
+    class Meta:
+        model = MaintenanceRequest
+        fields = ["room", "category", "description"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ошибки полей связываются с инпутами: base.css:217 красит [aria-invalid="true"].
+        if self.is_bound:
+            for field in self.errors or {}:
+                if field in self.fields:
+                    self.fields[field].widget.attrs["aria-invalid"] = "true"
+                    self.fields[field].widget.attrs["aria-describedby"] = f"id_{field}_errors"

@@ -313,6 +313,8 @@ h2 { font-size: 1.125rem; line-height: 1.3; }
 }
 
 .initials { font-size: 2.75rem; font-weight: 700; margin: 0 0 .5rem; letter-spacing: .04em; }
+/* T40: фото профиля — круглый аватар вместо инициалов. */
+.avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; display: block; margin: 0 0 .5rem; }
 .profile dt { font-weight: 650; margin-top: .55rem; }
 .profile dd { margin: 0 0 .25rem; }
 .events { padding-left: 1.25rem; }

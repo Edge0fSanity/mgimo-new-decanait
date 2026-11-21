@@ -27,6 +27,8 @@ class StudentProfile(models.Model):
         NEUTRAL = "neutral", "Нейтральный"
 
     theme = models.CharField("Оформление", max_length=16, choices=Theme.choices, default=Theme.MGIMO)
+    # T40: фото профиля. Раздаётся только через защищённый view (settings: /media/ напрямую запрещён).
+    photo = models.ImageField("Фото", upload_to="avatars/", null=True, blank=True)
 
     class Meta:
         verbose_name = "Профиль студента"

@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.communications.models import Notification
 
-from .models import DemoDocument, RequestStatusEvent, StudentRequest
+from .models import DemoDocument, MaintenanceRequest, RequestStatusEvent, StudentRequest
 
 
 def _transition(queryset, to_status, note, actor):
@@ -89,6 +89,14 @@ class StudentRequestAdmin(admin.ModelAdmin):
 @admin.register(DemoDocument)
 class DemoDocumentAdmin(admin.ModelAdmin):
     list_display = ("title", "owner", "request", "created_at")
+
+
+@admin.register(MaintenanceRequest)
+class MaintenanceRequestAdmin(admin.ModelAdmin):
+    # T48: статус дефекта кабинета ведёт staff; студент видит его на /maintenance/.
+    list_display = ("room", "category", "owner", "status", "created_at")
+    list_filter = ("status", "category", "room")
+    list_select_related = ("owner", "room")
 
 
 # Оценки и экзамены в admin не регистрируются: служебная роль не работает с ними (ARCHITECTURE §5).

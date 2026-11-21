@@ -1,8 +1,12 @@
+import mimetypes
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
 
-from .forms import ProfileForm, ThemeForm
+from .forms import AvatarForm, ProfileForm, ThemeForm
 from .models import StudentProfile
 
 
@@ -17,6 +21,21 @@ def profile(request):
             if form.is_valid():
                 form.save()
                 messages.success(request, "Оформление сохранено")
+        elif "save_avatar" in request.POST:
+            # T40: фото профиля. Старый файл забираем до биндинга формы: после валидации
+            # profile.photo — уже новый загруженный файл, delete() затёр бы его.
+            old_photo = profile.photo if profile.photo else None
+            form = AvatarForm(request.POST, request.FILES, instance=profile)
+            if form.is_valid():
+                if old_photo:
+                    old_photo.delete(save=False)
+                form.save()
+                messages.success(request, "Фото профиля обновлено")
+            else:
+                # `or {}` — идиома проекта (forms.py:13): Pyright считает errors Optional.
+                for errors in (form.errors or {}).values():
+                    for error in errors:
+                        messages.error(request, error)
         else:
             form = ProfileForm(request.POST, instance=request.user)
             if form.is_valid():
@@ -31,8 +50,20 @@ def profile(request):
             "initials": initials,
             "form": ProfileForm(instance=request.user),
             "theme_form": ThemeForm(instance=profile),
+            "avatar_form": AvatarForm(instance=profile),
         },
     )
+
+
+@login_required
+@require_http_methods(["GET"])
+def avatar(request, pk):
+    # T40: личный файл раздаётся только владельцу; чужой аватар не существует (404).
+    profile = get_object_or_404(StudentProfile, pk=pk, user=request.user)
+    if not profile.photo:
+        raise Http404("Фото не загружено")
+    content_type = mimetypes.guess_type(profile.photo.name)[0] or "application/octet-stream"
+    return FileResponse(profile.photo.open("rb"), content_type=content_type)
 
 
 @login_required

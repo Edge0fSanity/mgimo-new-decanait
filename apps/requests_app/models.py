@@ -101,3 +101,43 @@ class RequestStatusEvent(models.Model):
         verbose_name = "Событие статуса"
         verbose_name_plural = "События статусов"
         ordering = ["created_at"]
+
+
+class MaintenanceRequest(models.Model):
+    """Заявка на обслуживание кабинета (ревью п.13): неработающий компьютер,
+    кондиционер, отопление и другие дефекты. Статус ведёт staff через admin."""
+
+    class Category(models.TextChoices):
+        COMPUTER = "computer", "Компьютер / техника"
+        PROJECTOR = "projector", "Проектор / экран"
+        AC = "ac", "Кондиционер"
+        HEATING = "heating", "Отопление"
+        FURNITURE = "furniture", "Мебель"
+        OTHER = "other", "Другое"
+
+    class Status(models.TextChoices):
+        SUBMITTED = "submitted", "Принята"
+        IN_PROGRESS = "in_progress", "В работе"
+        DONE = "done", "Устранена"
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="maintenance_requests"
+    )
+    room = models.ForeignKey(
+        "academics.Room", on_delete=models.PROTECT, related_name="maintenance_requests"
+    )
+    category = models.CharField("Что не работает", max_length=16, choices=Category.choices)
+    description = models.TextField("Описание")
+    status = models.CharField(
+        "Статус", max_length=16, choices=Status.choices, default=Status.SUBMITTED
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Заявка на обслуживание кабинета"
+        verbose_name_plural = "Заявки на обслуживание кабинетов"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.room} · {self.get_category_display()} ({self.get_status_display()})"

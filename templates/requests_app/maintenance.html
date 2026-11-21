@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Обслуживание кабинетов — Деканат{% endblock %}
+{% block content %}
+<h1>Обслуживание кабинетов</h1>
+<p class="hint">Не работает компьютер, кондиционер или отопление? Сообщите здесь — заявка уйдёт в хозяйственный отдел.</p>
+<form method="post" class="student-form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for field in form.visible_fields %}
+  <div class="form-field">{{ field.label_tag }}{{ field }}<div id="id_{{ field.name }}_errors">{{ field.errors }}</div></div>
+  {% endfor %}
+  <button type="submit" class="button">Отправить заявку</button>
+</form>
+
+<h2>Мои заявки</h2>
+{% if entries %}
+<ul class="entries">
+  {% for m in entries %}
+  <li>
+    <span class="entry request-card">
+      <span class="record-heading">
+        <strong>{{ m.room }} · {{ m.get_category_display }}</strong>
+        <span class="badge status-{{ m.status }}">{{ m.get_status_display }}</span>
+      </span>
+      <span class="meta request-meta">
+        <time datetime="{{ m.created_at|date:'c' }}">{{ m.created_at|date:"d.m.Y, H:i" }}</time>
+      </span>
+      {% if m.description %}<span class="meta">{{ m.description }}</span>{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">Заявок пока нет</p>
+{% endif %}
+{% endblock %}

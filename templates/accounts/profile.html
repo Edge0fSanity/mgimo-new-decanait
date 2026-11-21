@@ -2,7 +2,11 @@
 {% block title %}Профиль — Деканат{% endblock %}
 {% block content %}
 <h1>Профиль</h1>
+{% if profile.photo %}
+<img class="avatar" src="{% url 'avatar' profile.pk %}" alt="Фото профиля" width="96" height="96">
+{% else %}
 <p class="initials" aria-hidden="true">{{ initials }}</p>
+{% endif %}
 <dl class="profile">
   <dt>ФИО</dt><dd>{{ profile.display_name }}</dd>
   <dt>Факультет</dt><dd>{{ profile.faculty }}</dd>
@@ -15,6 +19,16 @@
 <p class="hint">Языковая группа и специализация определяют, какие занятия попадают в ваше расписание.
 Нашли ошибку в учебных данных? <a href="{% url 'request_create_kind' 'zayavlenie' %}">Сообщите о ней</a> через заявление.
 <a href="{% url 'my_group' %}">Студенты моей группы</a></p>
+
+<h2>Фото профиля</h2>
+<form method="post" enctype="multipart/form-data" class="student-form">
+  {% csrf_token %}
+  {% for field in avatar_form.visible_fields %}
+  <div class="form-field">{{ field.label_tag }}{{ field }}<div id="id_{{ field.name }}_errors">{{ field.errors }}</div></div>
+  {% endfor %}
+  <p class="hint">JPEG или PNG, до 5 МБ, не меньше 100×100 пикселей. Фото видите только вы.</p>
+  <button type="submit" name="save_avatar" value="1" class="button secondary">Загрузить</button>
+</form>
 
 <h2>Контактные данные</h2>
 <form method="post" class="student-form">

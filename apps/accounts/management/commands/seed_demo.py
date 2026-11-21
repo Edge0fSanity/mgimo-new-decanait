@@ -33,7 +33,7 @@ from apps.academics.models import (
 )
 from apps.communications.models import Announcement, Notification
 from apps.dashboard.models import ExternalLink
-from apps.requests_app.models import DemoDocument, RequestStatusEvent, StudentRequest
+from apps.requests_app.models import DemoDocument, MaintenanceRequest, RequestStatusEvent, StudentRequest
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 
@@ -152,9 +152,10 @@ class Command(BaseCommand):
             Room.objects.get_or_create(name=room)
 
         # Каникулы (ревью п.17–18): демо-период рядом с «сегодня», чтобы баннер
-        # напоминания был виден (при повторном seed поднимается, как дедлайны),
-        # плюс зимние/летние по образцу памятки для иностранных студентов МГИМО —
-        # заменить датами приказа.
+        # напоминания был виден (при повторном seed поднимается, как дедлайны).
+        # Зимние 25–31.01.2027 — из официального календарного графика МГИМО
+        # (разбор PDF, docs/mgimo-kug-meo-2026.pdf); летние — образец, в графике
+        # июнь–август занят практикой, точные даты сверить по приказу.
         today = timezone.localdate()
         VacationPeriod.objects.update_or_create(
             title="Каникулы (демо)",
@@ -162,7 +163,7 @@ class Command(BaseCommand):
         )
         VacationPeriod.objects.get_or_create(
             title="Зимние каникулы 2026/27",
-            defaults={"starts_at": date(2027, 1, 26), "ends_at": date(2027, 2, 6)},
+            defaults={"starts_at": date(2027, 1, 25), "ends_at": date(2027, 1, 31)},
         )
         VacationPeriod.objects.get_or_create(
             title="Летние каникулы 2027",
@@ -170,14 +171,14 @@ class Command(BaseCommand):
         )
 
         # Полезные ссылки (ревью п.10, п.12): Moodle и библиотека — заглушки «#»,
-        # пока реальные адреса не проверены; кафедры МЭО — найдены поиском,
-        # открытием страниц не проверены.
+        # пока реальные адреса не проверены. Из найденных страниц кафедр МЭО
+        # открывается только кафедра английского языка №2 — остальные адреса
+        # битые (сервер отдаёт 500), ждём корректный список.
         for i, (title, url) in enumerate(
             [
                 ("Moodle МГИМО", "#"),
                 ("Библиотека МГИМО", "#"),
-                ("Кафедра МЭО и ВЭС", "https://mgimo.ru/study/faculty/meo/kmeovs/"),
-                ("Кафедра экономической теории", "https://mgimo.ru/study/faculty/meo/ket/"),
+                ("Кафедра английского языка №2", "https://mgimo.ru/study/faculty/meo/eng2/"),
             ]
         ):
             ExternalLink.objects.update_or_create(
@@ -243,6 +244,17 @@ class Command(BaseCommand):
                 request=req, to_status=req.status, actor=a, note="Демо-заявка при seed"
             )
             self.stdout.write(f"Создана демо-заявка {req.public_number}")
+
+        # Демо-заявка на обслуживание кабинета (T48), только если её ещё нет.
+        demo_room = Room.objects.filter(name="Ауд. 301").first()
+        if demo_room and not MaintenanceRequest.objects.filter(owner=a).exists():
+            MaintenanceRequest.objects.create(
+                owner=a,
+                room=demo_room,
+                category=MaintenanceRequest.Category.COMPUTER,
+                description="Не включается компьютер у окна",
+            )
+            self.stdout.write("Создана демо-заявка на обслуживание Ауд. 301")
 
         # Оценки/зачёты/сессия: у A и B разные значения.
         profiles = {username: StudentProfile.objects.get(user=u) for username, u in users.items()}
