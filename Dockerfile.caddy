@@ -1,0 +1,9 @@
+# caddy-ratelimit отсутствует в официальном образе — собираем Caddy с модулем (T33).
+FROM caddy:2-builder AS builder
+# proxy.golang.org здесь периодически stall'ится — качаем через goproxy.cn.
+ENV GOPROXY=https://goproxy.cn,direct
+RUN xcaddy build --with github.com/mholt/caddy-ratelimit
+
+FROM caddy:2-alpine
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+COPY Caddyfile /etc/caddy/Caddyfile

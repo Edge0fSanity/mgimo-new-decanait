@@ -1,0 +1,35 @@
+{$SITE_ADDRESS:localhost} {
+	# Локальная проверка — самоподписанный сертификат. Для прода с реальным доменом
+	# удалить строку ниже: Caddy сам получит сертификат Let's Encrypt.
+	tls internal
+
+	handle_path /static/* {
+		root * /srv/staticfiles
+		file_server
+	}
+
+	# Rate limiting логина (T33): 20 попыток в минуту с одного IP.
+	route /admin/login* {
+		rate_limit {
+			zone admin_login {
+				key {remote_host}
+				events 20
+				window 1m
+			}
+		}
+		reverse_proxy web:8000
+	}
+
+	route /login* {
+		rate_limit {
+			zone login {
+				key {remote_host}
+				events 20
+				window 1m
+			}
+		}
+		reverse_proxy web:8000
+	}
+
+	reverse_proxy web:8000
+}

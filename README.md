@@ -176,5 +176,37 @@ PROMPT\_LOG.md — [https\://docs.google.com/document/d/1lCXPejVKLyJ4eTI7Fx\_5kr
 
 QA.md — [https\://docs.google.com/document/d/16XiXpasawGAnxkan-1MEV9pkw7Qwov\_vlVdAYQp-KwY/edit?usp=drivesdk](https://docs.google.com/document/d/16XiXpasawGAnxkan-1MEV9pkw7Qwov_vlVdAYQp-KwY/edit?usp=drivesdk)
 
-SUBMISSION.md — [https\://docs.google.com/document/d/1Q2qTgabcKrmw2En69rK-cZdqTl7cb\_JUeiwvfJjW\_LI/edit?usp=drivesdk](https://docs.google.com/document/d/1Q2qTgabcKrmw2En69rK-cZdqTl7cb_JUeiwvfJjW_LI/edit?usp=drivesdk)
+SUBMISSION.md — [https\://docs.google.com/document/d/1Q2qTgabcKrmW2En69rK-cZdqTl7cb\_JUeiwvfJjW\_LI/edit?usp=drivesdk](https://docs.google.com/document/d/1Q2qTgabcKrmW2En69rK-cZdqTl7cb_JUeiwvfJjW_LI/edit?usp=drivesdk)
+
+# Деплой (A05): Docker Compose
+
+Состав и решения — D-ADR-19 (compose, отказ от Kubernetes/Redis, rate limit на Caddy). Секреты — только env сервера: скопировать `.env.example` в `.env` и заполнить реальными значениями (`.env` в .gitignore, в Git не попадает).
+
+Первый запуск:
+
+    docker compose up -d --build      # entrypoint web сам применит миграции и collectstatic
+    # проверка: https://<SITE_ADDRESS>/login/ и /admin/ отвечают
+
+Обновление:
+
+    git pull
+    docker compose build
+    docker compose up -d              # откат — запуск предыдущего образа
+
+Миграция данных SQLite → Postgres (T27, объёмы малые):
+
+    # на старом стеке (SQLite):
+    uv run python manage.py dumpdata -o backup.json --natural-foreign --natural-primary
+    # в новом (compose поднят, Postgres пуст):
+    docker compose exec -T web python manage.py loaddata backup.json
+
+Caddy: для локальной проверки в Caddyfile включён `tls internal` (самоподписанный сертификат, `curl -k`). Для прода с реальным доменом удалить строку `tls internal` из Caddyfile — Caddy сам получит сертификат Let's Encrypt; `SITE_ADDRESS` задать в `.env`. Rate limit на /login/ и /admin/login/ — 20 запросов/мин с одного IP (caddy-ratelimit).
+
+Чек-лист A05 перед релизом:
+
+- [ ] `collectstatic` выполнен при `DEBUG=False` (в compose — автоматически в entrypoint web)
+- [ ] rate limit работает и на `/admin/login/`, не только на `/login/`
+- [ ] `/static/` отдаётся Caddy, не воркерами Django
+- [ ] `DJANGO_DEBUG=False`, `DJANGO_SESSION_COOKIE_SECURE=True`, `DJANGO_TRUST_PROXY_SSL=True` в `.env` сервера
+- [ ] секреты только в env сервера, в Git и evidence не попадают
 
