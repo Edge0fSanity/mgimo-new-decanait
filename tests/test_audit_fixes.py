@@ -19,7 +19,7 @@ class NoProfileTests(BaseTestCase):
         cls.staff = get_user_model().objects.create_user("admin_user", password=TEST_PASSWORD)
 
     def test_home_and_profile_404_without_profile(self):
-        self.assertTrue(self.client.login(username="admin_user", password=TEST_PASSWORD))
+        self.client.force_login(get_user_model().objects.get(username="admin_user"))
         self.assertEqual(self.client.get("/").status_code, 404)
         self.assertEqual(self.client.get(reverse("profile")).status_code, 404)
 
@@ -37,5 +37,10 @@ class SeedPasswordFallbackTests(BaseTestCase):
                     with open(path, encoding="utf-8") as f:
                         lines = dict(l.strip().split("=", 1) for l in f if "=" in l)
             self.assertEqual(set(lines), {"demo_a", "demo_b", "demo_staff"})
-            self.assertTrue(self.client.login(username="demo_a", password=lines["demo_a"]))
-            self.assertTrue(self.client.login(username="demo_b", password=lines["demo_b"]))
+            # Пароль проверяем POST-ом через view: axes требует request в authenticate().
+            for username in ("demo_a", "demo_b"):
+                response = self.client.post(
+                    reverse("login"), {"username": username, "password": lines[username]}
+                )
+                self.assertEqual(response.status_code, 302, username)
+                self.client.post(reverse("logout"))

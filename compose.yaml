@@ -2,45 +2,40 @@ services:
   web:
     build: .
     restart: unless-stopped
+    env_file: .env
     environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?задайте в .env}
-      DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
-      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
       DJANGO_DB_ENGINE: django.db.backends.postgresql
-      DJANGO_DB_NAME: ${POSTGRES_DB:?задайте в .env}
-      DJANGO_DB_USER: ${POSTGRES_USER:?задайте в .env}
-      DJANGO_DB_PASSWORD: ${POSTGRES_PASSWORD:?задайте в .env}
+      DJANGO_DB_NAME: ${POSTGRES_DB:-decanat}
+      DJANGO_DB_USER: ${POSTGRES_USER:-decanat}
+      DJANGO_DB_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD в .env}
       DJANGO_DB_HOST: db
       DJANGO_DB_PORT: "5432"
-      DJANGO_SESSION_COOKIE_SECURE: ${DJANGO_SESSION_COOKIE_SECURE:-True}
-      DJANGO_TRUST_PROXY_SSL: ${DJANGO_TRUST_PROXY_SSL:-True}
     volumes:
       - staticfiles:/app/staticfiles
       - media:/app/media
     depends_on:
       db:
         condition: service_healthy
+    expose:
+      - "8000"
 
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:?задайте в .env}
-      POSTGRES_USER: ${POSTGRES_USER:?задайте в .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте в .env}
+      POSTGRES_DB: ${POSTGRES_DB:-decanat}
+      POSTGRES_USER: ${POSTGRES_USER:-decanat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD в .env}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-decanat} -d ${POSTGRES_DB:-decanat}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   caddy:
-    build:
-      context: .
-      dockerfile: Dockerfile.caddy
+    image: caddy:2-alpine
     restart: unless-stopped
     ports:
       - "80:80"
@@ -48,15 +43,16 @@ services:
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
     volumes:
-      - caddy-data:/data
-      - caddy-config:/config
-      - staticfiles:/srv/staticfiles:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - staticfiles:/srv/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - web
 
 volumes:
-  postgres-data:
+  pgdata:
   staticfiles:
   media:
-  caddy-data:
-  caddy-config:
+  caddy_data:
+  caddy_config:

@@ -22,7 +22,7 @@
   <div class="form-field">
     {{ field.label_tag }}
     {{ field }}
-    {{ field.errors }}
+    <div id="id_{{ field.name }}_errors">{{ field.errors }}</div>
   </div>
   {% endfor %}
   <button type="submit" class="button">{{ title }}</button>

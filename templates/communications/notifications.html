@@ -22,7 +22,7 @@
       <a class="button" href="{{ n.target_url }}{% if n.kind == 'announcement' and n.target_url == '/' %}#announcements{% endif %}">
         {% if n.kind == 'status' %}К заявке
         {% elif n.kind == 'announcement' %}К объявлениям
-        {% elif n.kind == 'deadline' %}К срокам
+        {% elif n.kind == 'deadline' %}К дедлайнам
         {% elif n.kind == 'reschedule' %}К расписанию
         {% else %}К событию{% endif %}
       </a>

@@ -9,12 +9,12 @@
   <div class="form-field">
     <label for="{{ form.username.id_for_label }}">Логин</label>
     {{ form.username }}
-    {{ form.username.errors }}
+    <div id="id_username_errors">{{ form.username.errors }}</div>
   </div>
   <div class="form-field">
     <label for="{{ form.password.id_for_label }}">Пароль</label>
     {{ form.password }}
-    {{ form.password.errors }}
+    <div id="id_password_errors">{{ form.password.errors }}</div>
   </div>
   <button type="submit" class="button">Войти</button>
 </form>

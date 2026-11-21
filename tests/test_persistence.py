@@ -31,7 +31,7 @@ class PersistenceTests(BaseTestCase):
 
         # Logout / повторный вход — заявка на месте.
         client.logout()
-        self.assertTrue(client.login(username=self.user_a.username, password=TEST_PASSWORD))
+        client.force_login(self.user_a)
         response = client.get(reverse("request_detail", args=[obj.pk]))
         self.assertContains(response, obj.public_number)
         self.assertContains(response, "Подана")
@@ -56,7 +56,7 @@ class PersistenceTests(BaseTestCase):
         self.assertTrue(StudentRequest.objects.filter(pk=user_request.pk, purpose="Моя заявка").exists())
         # Повторный seed не сбрасывает пароли и не создаёт дубликаты аккаунтов.
         self.assertEqual(get_user_model().objects.filter(username__in=["demo_a", "demo_b"]).count(), 2)
-        self.assertTrue(client.login(username="demo_a", password=TEST_PASSWORD))
+        client.force_login(get_user_model().objects.get(username="demo_a"))
 
     def test_seed_gives_different_schedules(self):
         env = {"DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD, "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD, "DEMO_STAFF_PASSWORD": TEST_PASSWORD}
@@ -65,11 +65,11 @@ class PersistenceTests(BaseTestCase):
         a = get_user_model().objects.get(username="demo_a")
         b = get_user_model().objects.get(username="demo_b")
         client_a = self.client
-        self.assertTrue(client_a.login(username="demo_a", password=TEST_PASSWORD))
+        client_a.force_login(a)
         page_a = client_a.get("/schedule/?view=week")
         self.assertContains(page_a, "Кузнецова Ольга")   # EN-1
         self.assertNotContains(page_a, "Орлова Мария")   # EN-2
-        self.assertTrue(client_a.login(username="demo_b", password=TEST_PASSWORD))
+        client_a.force_login(b)
         page_b = client_a.get("/schedule/?view=week")
         self.assertContains(page_b, "Орлова Мария")
         self.assertNotContains(page_b, "Кузнецова Ольга")

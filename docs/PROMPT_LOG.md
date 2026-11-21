@@ -190,4 +190,29 @@ D-P013 | 21.11.2026 | Ревью производительности: T31, T33,
 Команды и фактический вывод: docker compose up -d --build — все 3 сервиса healthy; https://localhost/login/ → 200, http → 308, /static/css/base.css → 200 (Caddy), /admin/login/ → 200; rate limit подтверждён (19×200 → 429); end-to-end: seed_demo в контейнере, POST логина demo_a через Caddy+Postgres+gunicorn → 302, дашборд → 200; после проверки compose down -v. `uv run python manage.py test tests` → 82 теста OK; manage.py check — без замечаний; hermes verify --json → ok=true.
 
 Ограничения: миграция данных SQLite→Postgres (dumpdata→loaddata) — задокументирована в README, фактически не прогонялась; TLS Let's Encrypt на реальном домене не проверялся (только tls internal; для прода удалить строку 'tls internal' — описано в README); сборка Caddy-образа ~15 мин на медленной сети.
+
+D-P012 | 21.11.2026 | AFK-проход: 404/500, rate limit логина, T34 docker-обвязка.
+
+Пользователь: вызов скилла afk (автономная работа над проектом на ветке afk/2026-11-21 от master b792603; идеи и evidence — .afk/2026-11-21.md, в Git не попадает).
+
+Инструмент: Hermes Agent (модель MiniMax-M2.5-NVFP4), реализация напрямую (без субагентов).
+
+Результат: (1) Кастомные templates/404.html и 500.html в стиле base.html — при DEBUG=False мёртвая ссылка отдаёт страницу кабинета, а не голое «Not Found»; тест tests/test_error_pages.py. (2) Троттлинг POST-попыток входа (чек-лист A05): 5 на пару IP+логин и 30 на IP за 5 минут через кэш, обёрнуты обе формы — /login/ и /admin/login/ (config/urls.py перехватывает admin/login/ до include); без новой зависимости, решение зафиксировано в D-ADR-19; тесты tests/test_login_throttle.py (5 шт). (3) T34: Dockerfile (python:3.12-slim, uv sync --extra prod, не-root пользователь, HEALTHCHECK GET /login/, entrypoint migrate+collectstatic+gunicorn), compose.yaml (web/db postgres:16-alpine/caddy, тома pgdata/staticfiles/media, healthchecks), Caddyfile (TLS, handle_path /static/*, reverse_proxy), .env.example дополнен POSTGRES_*/SITE_ADDRESS/GUNICORN_WORKERS, README — раздел «Деплой» с бэкапом/восстановлением и переносом SQLite→Postgres; gunicorn и psycopg — в optional-dependencies prod (dev-установка не меняется). T31 закрыт той же обвязкой (collectstatic в entrypoint, /static/ раздаёт Caddy).
+
+Команды и фактический вывод: `uv lock` (+psycopg 3.3.9); `uv run python manage.py test tests` → OK (88 тестов); `docker build` → OK; `docker compose up -d` → web (healthy), db (healthy), caddy; seed внутри контейнера; curl -k https://localhost: login 200, POST-вход 302, страницы / /schedule/ /grades/ /requests/ /profile/ /notifications/ → 200, /static/css/base.css → 200 (после исправления handle → handle_path), /media/... → 404 (личные файлы наружу не отдаются); POST новой справки через Caddy → 302, заявка переживает restart web (том pgdata); `docker compose down` после проверки (тома сохранены).
+
+Ограничения: деплой на VPS и проверка из РФ не выполнялись (A05, D-Q09/D-Q10 — за уполномоченным участником); 500.html не вызывался реальным сбоем (стандартный механизм Django); троттлинг на LocMem-кэше действует в пределах воркера — при горизонтальном масштабировании нужен общий кэш (записано в D-ADR-19); браузерный прогон 360 px в этом проходе не повторялся (скриншоты T26 в evidence).
+Стоимость: неизвестно. Ручные действия: нет.
+
+D-P013 | 21.11.2026 | Решения пользователя по AFK-проходу: django-axes, favicon.
+
+Пользователь: ответы на вопросы по решениям — rate limit перевести на django-axes; T34 оставить; SSL/HSTS — «пусть хостер на своей стороне решает»; favicon добавить; «прогноз рейтинга» — ответа нет, не строится.
+
+Инструмент: Hermes Agent (модель MiniMax-M2.5-NVFP4), реализация напрямую.
+
+Результат: (1) Самодельный троттлинг (кэш, 429) удалён из apps/accounts/views.py и urls; подключён django-axes 9.0.0: INSTALLED_APPS + AUTHENTICATION_BACKENDS (AxesStandaloneBackend + ModelBackend) + AxesMiddleware, AXES_FAILURE_LIMIT=5 (блокировка на 5-й неудачной попытке), AXES_COOLOFF_TIME=1 час, AXES_LOCKOUT_PARAMETERS=[["ip_address","username"]] — комбинированный параметр (другие логины с того же IP не блокируются), AXES_RESET_ON_SUCCESS=True; попытки в БД (миграции axes применены), действуют между перезапусками и воркерами. Обе формы: /login/ и /admin/login/ через axes_dispatch. Тесты переписаны (5 шт), тесты-хелперы переведены на force_login (axes требует request в authenticate(), client.login() его не передаёт; проверка паролей seed — POST-ом через view). (2) Favicon: static/favicon.svg («Д» на фирменном #173d71) + link rel=icon в base.html. (3) D-ADR-19 и docs/QA.md обновлены под axes.
+
+Команды и фактический вывод: `uv add django-axes` → 9.0.0; `uv run python manage.py migrate` → axes 0001–0010 OK; `uv run python manage.py test tests` → OK (88 тестов). Отладка: axes блокирует НА 5-й неудачной попытке (4 проходят) — тесты выровнены; список ["ip_address","username"] в axes — раздельные измерения, для пары нужен вложенный список — найдено по исходникам helpers.py, зафиксировано в комментарии settings.
+
+Ограничения: HSTS/SECURE_SSL_REDIRECT не добавлялись (решение за хостером); живой браузерный прогон favicon не делался (проверен линком в HTML и наличием файла); блокировка axes в docker-контейнере не перепроверялась (логика та же, миграции применяются entrypoint'ом).
 Стоимость: неизвестно. Ручные действия: нет.
