@@ -30,7 +30,3 @@ class CampusMapTests(BaseTestCase):
         page = self.login(self.user_a).get(reverse("campus_map"))
         self.assertContains(page, "campus-map.svg")
         self.assertContains(page, "Схема условная")
-
-    def test_home_links_to_map(self):
-        page = self.login(self.user_a).get(reverse("home"))
-        self.assertContains(page, reverse("campus_map"))

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Свободные аудитории — Деканат{% endblock %}
+{% block title %}Аудитории без занятий по расписанию — Деканат{% endblock %}
 {% block content %}
-<h1>Свободные аудитории</h1>
+<h1>Аудитории без занятий по расписанию</h1>
 <form method="get" class="student-form">
   <div class="form-field">
     <label for="id_date">Дата</label>
@@ -19,12 +19,16 @@
 </form>
 {% if error %}
 <p class="empty" role="alert">{{ error }}</p>
+{% elif no_schedule %}
+<p class="empty">Расписание на эту дату не загружено</p>
+{% elif empty_rooms %}
+<p class="empty">Справочник аудиторий пока пуст</p>
 {% else %}
 <ul class="entries">
   {% for room in free %}
   <li class="entry"><span class="subject">{{ room }}</span><span class="meta">свободна</span></li>
   {% empty %}
-  <li class="entry"><span class="meta">Свободных аудиторий нет — все заняты</span></li>
+  <li class="entry"><span class="meta">Нет подходящих аудиторий</span></li>
   {% endfor %}
 </ul>
 {% endif %}

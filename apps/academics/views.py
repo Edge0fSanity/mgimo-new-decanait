@@ -142,7 +142,7 @@ def teachers(request):
 
 @login_required
 def free_rooms(request):
-    """Свободные аудитории корпуса на выбранные дату и интервал (ревью п.14)."""
+    """Аудитории без занятий по расписанию на выбранные дату и интервал (ревью п.14, P0-3)."""
     get_object_or_404(StudentProfile, user=request.user)
     moscow = ZoneInfo("Europe/Moscow")
     day, start_t, end_t = timezone.localdate(timezone=moscow), time(9, 0), time(21, 0)
@@ -159,11 +159,20 @@ def free_rooms(request):
     if error is None and start_t >= end_t:
         error = "Конец интервала должен быть позже начала"
     free = []
+    no_schedule = empty_rooms = False
     if error is None:
         start_dt = datetime.combine(day, start_t, moscow)
         end_dt = datetime.combine(day, end_t, moscow)
-        busy = ScheduleEntry.objects.filter(starts_at__lt=end_dt, ends_at__gt=start_dt).values_list("room", flat=True)
-        free = list(Room.objects.exclude(name__in=busy))
+        day_start = datetime.combine(day, time.min, moscow)
+        no_schedule = not ScheduleEntry.objects.filter(
+            starts_at__gte=day_start, starts_at__lt=day_start + timedelta(days=1)
+        ).exists()
+        empty_rooms = not Room.objects.exists()
+        if not no_schedule and not empty_rooms:
+            busy = ScheduleEntry.objects.filter(starts_at__lt=end_dt, ends_at__gt=start_dt).values_list(
+                "room", flat=True
+            )
+            free = list(Room.objects.exclude(name__in=busy))
     return render(
         request,
         "academics/free_rooms.html",
@@ -173,6 +182,8 @@ def free_rooms(request):
             "end_t": end_t,
             "free": free,
             "error": error,
+            "no_schedule": no_schedule,
+            "empty_rooms": empty_rooms,
         },
     )
 
