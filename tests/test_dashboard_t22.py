@@ -22,20 +22,21 @@ class RatingHintTests(BaseTestCase):
         )
         client = self.login(self.user_a)
         page = client.get(reverse("home"))
-        self.assertContains(page, "До «хорошо» по Микроэкономика на экзамене нужно 65%")
+        self.assertContains(page, "Микроэкономика")
+        self.assertContains(page, '<strong class="summary-percent">65%</strong>', html=True)
         self.assertContains(page, reverse("subject_detail", args=[self.subject.pk]))
 
         # У B нет оценки по дисциплине — чужой строки нет (и ссылка не 404).
         client = self.login(self.user_b)
-        self.assertNotContains(client.get(reverse("home")), "на экзамене нужно")
+        self.assertNotContains(client.get(reverse("home")), 'class="summary-percent"')
 
     def test_hint_absent_without_data(self):
         # Веса заданы, но элементы текущего контроля не внесены.
         client = self.login(self.user_a)
-        self.assertNotContains(client.get(reverse("home")), "на экзамене нужно")
+        self.assertNotContains(client.get(reverse("home")), 'class="summary-percent"')
 
         self.subject.weight_current = None
         self.subject.weight_exam = None
         self.subject.save(update_fields=["weight_current", "weight_exam"])
         CurrentControlElement.objects.filter(subject=self.subject).update(percent="85")
-        self.assertNotContains(client.get(reverse("home")), "на экзамене нужно")
+        self.assertNotContains(client.get(reverse("home")), 'class="summary-percent"')

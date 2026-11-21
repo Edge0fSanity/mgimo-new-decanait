@@ -4,53 +4,75 @@
 {% block content %}
 {% timezone "Europe/Moscow" %}
 <div class="today-heading">
-  <h1>Сегодня</h1>
-  <p class="context"><time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"j E" }} · МСК</time> <span>Группа {{ profile.base_group.code }}</span></p>
+  <div>
+    <h1>Сегодня</h1>
+    <p class="today-greeting">Здравствуйте, {{ profile.display_name }}!</p>
+  </div>
+  <p class="context"><time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"l, j E"|capfirst }} · МСК</time> <span>Группа {{ profile.base_group.code }}</span></p>
 </div>
-<div class="today-grid">
+<div class="today-board">
   {% with e=next_entry %}
-  <section class="next-class" aria-labelledby="next-class-title">
-    <h2 id="next-class-title">Ближайшее занятие</h2>
+  <section class="next-class{% if not e %} next-class-empty{% endif %}" aria-labelledby="next-class-title">
+    <div class="next-class-heading">
+      <h2 id="next-class-title">Ближайшее занятие</h2>
+      {% if e.old_starts_at or e.old_room %}<span class="badge change-badge">Перенос</span>{% endif %}
+    </div>
     {% if e %}
-      <p class="class-date">{{ e.starts_at|date:"l, j E"|capfirst }}{% if e.old_starts_at or e.old_room %} <span class="badge change-badge">Перенос</span>{% endif %}</p>
-      <p class="class-time"><time datetime="{{ e.starts_at|date:'c' }}">{{ e.starts_at|date:"H:i" }}</time>–<time datetime="{{ e.ends_at|date:'c' }}">{{ e.ends_at|date:"H:i" }}</time></p>
-      <p class="class-subject">{{ e.subject }}</p>
-      <div class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span></div>
+      <div class="class-content">
+        <div class="class-clock">
+          <p class="class-date"><time datetime="{{ e.starts_at|date:'Y-m-d' }}">{{ e.starts_at|date:"l, j E"|capfirst }}</time></p>
+          <p class="class-time"><time datetime="{{ e.starts_at|date:'c' }}">{{ e.starts_at|date:"H:i" }}</time><span>–<time datetime="{{ e.ends_at|date:'c' }}">{{ e.ends_at|date:"H:i" }}</time></span></p>
+        </div>
+        <div class="class-information">
+          <p class="class-subject">{{ e.subject }}</p>
+          <p class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span></p>
+        </div>
+      </div>
       {% include "academics/_schedule_change.html" with entry=e only %}
     {% else %}
-      <p>Предстоящих занятий нет</p>
+      <p class="empty">Предстоящих занятий нет</p>
     {% endif %}
-    <a class="class-link" href="{{ schedule_url }}">К расписанию</a>
+    <a class="class-link{% if e %} button{% endif %}" href="{{ schedule_url }}">К расписанию <span aria-hidden="true">→</span></a>
   </section>
   {% endwith %}
   <div class="today-summary">
-    <section class="entry summary-card">
+    <section class="summary-row">
       <h2>Ближайший дедлайн</h2>
       {% if deadline %}
         <p class="summary-title"><a href="{% url 'deadlines' %}">{{ deadline.title }}</a></p>
         <p class="meta">До <time datetime="{{ deadline.due_at|date:'c' }}">{{ deadline.due_at|date:"j E, H:i" }}</time></p>
       {% else %}<p class="empty">Активных дедлайнов нет</p>{% endif %}
     </section>
-    <section class="entry summary-card">
-      <h2>Рейтинг</h2>
-      {% if rating_hint %}
-        <p class="summary-title"><a href="{% url 'subject_detail' rating_hint.subject.pk %}">До «хорошо» по {{ rating_hint.subject }} на экзамене нужно {{ rating_hint.needed }}%</a></p>
-      {% else %}<p class="empty">Данных для расчёта рейтинга пока нет</p>{% endif %}
-    </section>
-    <section class="entry summary-card">
+    <section class="summary-row">
       <h2>Активная заявка</h2>
       {% if active_request %}
-        <p class="summary-title"><a href="{% url 'request_detail' active_request.pk %}">{{ active_request.get_type_display }} <span class="request-number">{{ active_request.public_number }}</span></a></p>
-        <p><span class="badge status-{{ active_request.status }}">{{ active_request.get_status_display }}</span></p>
+        <div class="summary-record">
+          <p class="summary-title"><a href="{% url 'request_detail' active_request.pk %}">{{ active_request.get_type_display }}</a></p>
+          <span class="badge status-{{ active_request.status }}">{{ active_request.get_status_display }}</span>
+        </div>
+        <p class="meta request-number">{{ active_request.public_number }}</p>
       {% else %}
         <p class="empty">Активных заявок нет</p>
-        <p><a class="action-link" href="{% url 'request_create' %}">Заказать справку</a> · <a class="action-link" href="{% url 'request_create_kind' 'zayavlenie' %}">Подать заявление</a></p>
+        <div class="summary-actions"><a class="action-link" href="{% url 'request_create' %}">Заказать справку</a><a class="action-link" href="{% url 'request_create_kind' 'zayavlenie' %}">Подать заявление</a></div>
       {% endif %}
+    </section>
+    <section class="summary-row">
+      <h2>Прогноз оценки</h2>
+      {% if rating_hint %}
+        <div class="summary-record">
+          <p class="summary-title"><a href="{% url 'subject_detail' rating_hint.subject.pk %}">{{ rating_hint.subject }}</a></p>
+          <strong class="summary-percent">{{ rating_hint.needed }}%</strong>
+        </div>
+        <p class="meta">Столько нужно на экзамене до «хорошо»</p>
+      {% else %}<p class="empty">Данных для прогноза пока нет</p>{% endif %}
     </section>
   </div>
 </div>
 <section class="announcements" id="announcements">
-  <h2>Объявления</h2>
+  <div class="announcements-heading">
+    <h2>Объявления</h2>
+    <a href="{% url 'announcements' %}">Все объявления <span aria-hidden="true">→</span></a>
+  </div>
   {# T32: TTL 10 мин; last_seen в ключе — метка «новое» персональная, чужие точки показывать нельзя. #}
   {% cache 600 announcements profile.base_group.pk last_seen|date:'YmdHis' %}
   {% if announcements %}
@@ -66,7 +88,6 @@
     </ul>
   {% else %}<p class="empty">Объявлений нет</p>{% endif %}
   {% endcache %}
-  <p><a href="{% url 'announcements' %}">Все объявления</a></p>
 </section>
 {% endtimezone %}
 {% endblock %}
