@@ -18,10 +18,29 @@ KINDS = {
 
 @login_required
 def request_list(request):
-    page = Paginator(StudentRequest.objects.filter(owner=request.user), 20).get_page(
-        request.GET.get("page")
+    entries = StudentRequest.objects.filter(owner=request.user)
+    # Фильтр по типу/подтипу (ревью п.13); неизвестные значения игнорируются.
+    type_value = request.GET.get("type")
+    subtype_value = request.GET.get("subtype")
+    if type_value in StudentRequest.Type.values:
+        entries = entries.filter(type=type_value)
+    if subtype_value in StudentRequest.Subtype.values:
+        entries = entries.filter(subtype=subtype_value)
+    page = Paginator(entries, 20).get_page(request.GET.get("page"))
+    params = request.GET.copy()
+    params.pop("page", None)
+    return render(
+        request,
+        "requests_app/request_list.html",
+        {
+            "page_obj": page,
+            "querystring": params.urlencode(),
+            "type_value": type_value if type_value in StudentRequest.Type.values else "",
+            "subtype_value": subtype_value if subtype_value in StudentRequest.Subtype.values else "",
+            "type_choices": StudentRequest.Type.choices,
+            "subtype_choices": StudentRequest.Subtype.choices,
+        },
     )
-    return render(request, "requests_app/request_list.html", {"page_obj": page})
 
 
 @login_required
