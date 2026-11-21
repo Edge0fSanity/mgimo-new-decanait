@@ -34,6 +34,12 @@
   <button type="submit" name="save_theme" value="1" class="button secondary">Применить</button>
 </form>
 <p class="hint">Выбор сохраняется в профиле и действует на всех устройствах.</p>
+<h2>Вход и пароль</h2>
+<dl class="profile">
+  <dt>Логин</dt><dd>{{ request.user.username }}</dd>
+</dl>
+<p class="hint">Пароль выдан деканатом при первом входе. Если забыли пароль — обратитесь в учебный офис для сброса.
+Пароли в открытом виде не хранятся и не показываются.</p>
 <p><a href="{% url 'password_change' %}">Сменить пароль</a></p>
 <form method="post" action="{% url 'logout' %}" class="actions">{% csrf_token %}
   <button type="submit" class="button secondary">Выйти</button>

@@ -50,6 +50,13 @@ class ProfileViewTests(BaseTestCase):
         self.assertContains(client.get(reverse("profile")), "академическая 01")
 
 
+    def test_login_section_shows_username(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("profile"))
+        self.assertContains(page, "Вход и пароль")
+        self.assertContains(page, self.user_a.username)
+
+
 class MyGroupTests(BaseTestCase):
     def test_lists_own_group_marks_self(self):
         client = self.login(self.user_a)
