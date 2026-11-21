@@ -205,17 +205,26 @@ class Command(BaseCommand):
             )
         self.stdout.write("Оценки и экзамены готовы")
 
-        # Дедлайны: один на группу, один персональный у A.
-        Deadline.objects.get_or_create(
-            group=group,
-            title="Заявление на пересдачу — приём до конца недели",
-            defaults={"due_at": monday + timedelta(days=4, hours=18)},
-        )
-        Deadline.objects.get_or_create(
-            student=profiles["demo_a"],
-            title="Справка в ВУЦ — до четверга",
-            defaults={"due_at": monday + timedelta(days=3, hours=18)},
-        )
+        # Дедлайны: один на группу, один персональный у A. Привязаны к «сейчас»,
+        # а не к неделе seed: при запуске в конце недели привязка к понедельнику
+        # даёт уже истёкшие дедлайны и пустой блок на главной. При повторном
+        # seed истёкшие демо-дедлайны поднимаются (данные не стираются).
+        demo_deadlines = [
+            (Deadline(group=group, title="Заявление на пересдачу"), timedelta(days=4)),
+            (Deadline(student=profiles["demo_a"], title="Справка в ВУЦ"), timedelta(days=3)),
+        ]
+        now = timezone.localtime()
+        for deadline, due_in in demo_deadlines:
+            existing = Deadline.objects.filter(
+                group=deadline.group, student=deadline.student, title=deadline.title
+            ).first()
+            if existing:
+                if existing.due_at < now:
+                    existing.due_at = now + due_in
+                    existing.save(update_fields=["due_at"])
+            else:
+                deadline.due_at = now + due_in
+                deadline.save()
 
         # Объявление и уведомления (read_at остаётся пустым — студент прочитает сам).
         announcement, _ = Announcement.objects.get_or_create(
