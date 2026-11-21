@@ -45,7 +45,7 @@
       {% endif %}
     {% endif %}
     {% if c.rating %}
-    <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %} · прогноз предварительный{% if c.missing_count %}: не внесено оценок — {{ c.missing_count }}{% endif %}{% endif %}</span>
+    <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %}{% if c.missing_count %} · не внесено оценок — {{ c.missing_count }} (пустая клетка не считается нулём){% endif %}{% endif %}</span>
     {% elif c.current_avg %}
     <span class="meta">Текущий контроль: {{ c.current_avg }}% · схема оценивания не задана</span>
     {% endif %}

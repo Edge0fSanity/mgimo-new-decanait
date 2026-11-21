@@ -57,14 +57,14 @@
       {% endif %}
     </section>
     <section class="summary-row">
-      <h2>Прогноз оценки</h2>
+      <h2>Сколько нужно набрать</h2>
       {% if rating_hint %}
         <div class="summary-record">
           <p class="summary-title"><a href="{% url 'subject_detail' rating_hint.subject.pk %}">{{ rating_hint.subject }}</a></p>
           <strong class="summary-percent">{{ rating_hint.needed }}%</strong>
         </div>
         <p class="meta">Столько нужно на экзамене до «хорошо»</p>
-      {% else %}<p class="empty">Данных для прогноза пока нет</p>{% endif %}
+      {% else %}<p class="empty">Данных калькулятора пока нет</p>{% endif %}
     </section>
   </div>
 </div>
