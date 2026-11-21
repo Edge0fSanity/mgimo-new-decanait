@@ -1,41 +1,17 @@
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import F, Min, Q
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
 
-from apps.academics.models import Deadline, ScheduleEntry, Subject, VacationPeriod
-from apps.academics.views import exam_percent_needed
+from apps.academics.models import Deadline, ScheduleEntry, VacationPeriod
+from apps.academics.views import study_summary
 from apps.communications.models import Announcement, Notification
 from apps.requests_app.models import StudentRequest
-
-def _rating_hint(profile, now):
-    """Строка калькулятора (T22) для ближайшей дисциплины студента или None."""
-    candidates = (
-        Subject.objects.filter(Q(grade__student=profile) | Q(exam__student=profile))
-        .filter(weight_current__isnull=False, weight_exam__isnull=False)
-        .annotate(
-            next_at=Min(
-                "scheduleentry__starts_at",
-                filter=Q(scheduleentry__group=profile.base_group, scheduleentry__starts_at__gte=now),
-            )
-        )
-        .order_by(F("next_at").asc(nulls_last=True), "pk")
-        # prefetch — против N+1 по control_elements в цикле ниже (T28).
-        .prefetch_related("control_elements")
-    )
-    for subject in candidates:
-        entered = [float(e.percent) for e in subject.control_elements.all() if e.percent is not None]
-        current_avg = sum(entered) / len(entered) if entered else None
-        needed = exam_percent_needed(subject, current_avg)
-        if needed is not None:
-            return {"subject": subject, "needed": needed}
-    return None
-
 
 @login_required
 def home(request):
@@ -82,7 +58,7 @@ def home(request):
             "next_entry": next_entry,
             "schedule_url": reverse("schedule", query=schedule_query),
             "deadline": deadline,
-            "rating_hint": _rating_hint(profile, now),
+            "study": study_summary(profile, now),
             "active_request": active_request,
             "announcements": announcements,
             "vacation": vacation,

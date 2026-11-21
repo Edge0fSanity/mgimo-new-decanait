@@ -35,7 +35,12 @@
 {% elif current_avg is None %}
 <p class="meta">Не внесено оценок — {{ elements|length }}. Пока рассчитать цели нельзя.</p>
 {% else %}
-<h2>Сколько не хватает до оценки</h2>
+<h2>Расчёт при заданных баллах</h2>
+<ul class="meta">
+  <li>Текущий контроль — общий по дисциплине, не персональный.</li>
+  <li>Социальный блок считается зачтённым (100%).</li>
+  {% if not exam_passed %}<li>Экзамен ещё не сдан — расчёт гипотетический.</li>{% endif %}
+</ul>
 <ul class="entries">
   {% for t in targets %}
   <li class="entry"><span class="summary-title">{{ t.label }}</span> — {{ t.text }}</li>
@@ -47,7 +52,7 @@
   <button type="submit">Посчитать итог</button>
 </form>
 {% if slider %}
-<p><span class="summary-title">Итог будет: {{ slider.total }}% · {{ slider.mark }}</span></p>
+<p><span class="summary-title">При {{ slider.n }}% на экзамене: {{ slider.total }}% · {{ slider.mark }} (гипотетический расчёт)</span></p>
 {% endif %}
 {% endif %}
 {% endblock %}
