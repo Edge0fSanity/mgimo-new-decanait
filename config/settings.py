@@ -59,12 +59,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": Path(env("DJANGO_DB_PATH", str(BASE_DIR / "db.sqlite3"))),
+# SQLite по умолчанию (разработка/тесты); прод переключается на Postgres через env без изменения кода.
+DB_ENGINE = env("DJANGO_DB_ENGINE", "django.db.backends.sqlite3")
+if DB_ENGINE == "django.db.backends.sqlite3":
+    DATABASES = {
+        "default": {
+            "ENGINE": DB_ENGINE,
+            "NAME": Path(env("DJANGO_DB_NAME", str(BASE_DIR / "db.sqlite3"))),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": DB_ENGINE,
+            "NAME": env("DJANGO_DB_NAME", ""),
+            "USER": env("DJANGO_DB_USER", ""),
+            "PASSWORD": env("DJANGO_DB_PASSWORD", ""),
+            "HOST": env("DJANGO_DB_HOST", ""),
+            "PORT": env("DJANGO_DB_PORT", ""),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
