@@ -11,6 +11,7 @@
   badge.className = "badge countdown-badge";
 
   function format(mins) {
+    if (mins < 1) return "меньше минуты";
     if (mins < 60) return "через " + mins + " мин";
     var h = Math.floor(mins / 60);
     var m = mins % 60;
