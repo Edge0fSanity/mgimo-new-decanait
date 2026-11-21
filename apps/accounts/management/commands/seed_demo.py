@@ -127,28 +127,31 @@ class Command(BaseCommand):
             (3, 13, "Иностранный язык", "EN-2", "Ауд. 118", "Орлова Мария"),
             (4, 10, "История международных отношений", "", "Ауд. 205", "доц. Волков Игорь"),
         ]
-        for day, hour, subject, lang, room, teacher in plan:
-            starts = monday + timedelta(days=day, hours=hour)
-            entry, created = ScheduleEntry.objects.get_or_create(
-                group=group,
-                language_group=lang,
-                subject=subjects[subject],
-                starts_at=starts,
-                defaults={
-                    "ends_at": starts + timedelta(hours=1, minutes=30),
-                    "room": room,
-                    "teacher": teacher,
-                },
-            )
-            # Демонстрационный перенос: занятие EN-1 в четверг было в 13:00, стало в 15:00.
-            if created and lang == "EN-1" and day == 3:
-                entry.old_starts_at = starts - timedelta(hours=2)
-                entry.old_room = "Ауд. 112"
-                entry.change_reason = "Перенос по болезни преподавателя"
-                entry.change_source_role = "Деканат"
-                entry.changed_at = timezone.now()
-                entry.save()
-        self.stdout.write("Расписание недели готово")
+        # Две недели: в выходные текущая неделя уже в прошлом — без следующей
+        # недели кабинет показывает «Предстоящих занятий нет».
+        for week_offset in (0, 1):
+            for day, hour, subject, lang, room, teacher in plan:
+                starts = monday + timedelta(weeks=week_offset, days=day, hours=hour)
+                entry, created = ScheduleEntry.objects.get_or_create(
+                    group=group,
+                    language_group=lang,
+                    subject=subjects[subject],
+                    starts_at=starts,
+                    defaults={
+                        "ends_at": starts + timedelta(hours=1, minutes=30),
+                        "room": room,
+                        "teacher": teacher,
+                    },
+                )
+                # Демонстрационный перенос: занятие EN-1 в четверг было в 13:00, стало в 15:00.
+                if created and week_offset == 0 and lang == "EN-1" and day == 3:
+                    entry.old_starts_at = starts - timedelta(hours=2)
+                    entry.old_room = "Ауд. 112"
+                    entry.change_reason = "Перенос по болезни преподавателя"
+                    entry.change_source_role = "Деканат"
+                    entry.changed_at = timezone.now()
+                    entry.save()
+        self.stdout.write("Расписание двух недель готово")
 
         # Одна демо-заявка у A, только если у него ещё нет ни одной.
         a = users["demo_a"]
