@@ -33,3 +33,11 @@ def profile(request):
             "theme_form": ThemeForm(instance=profile),
         },
     )
+
+
+@login_required
+def my_group(request):
+    # Список своей группы; идентификатора группы в URL нет — чужой состав показать нельзя.
+    profile = get_object_or_404(StudentProfile, user=request.user)
+    classmates = StudentProfile.objects.filter(base_group=profile.base_group).order_by("display_name")
+    return render(request, "accounts/my_group.html", {"profile": profile, "classmates": classmates})

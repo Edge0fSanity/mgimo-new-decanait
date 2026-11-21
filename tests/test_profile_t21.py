@@ -1,6 +1,7 @@
 """Тесты T21: профиль — инициалы, учебные данные только просмотр, факультет МЭО, смена пароля."""
 from pathlib import Path
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
@@ -47,6 +48,21 @@ class ProfileViewTests(BaseTestCase):
         self.assertEqual(Group(code="МЭО-01").code_description, "МЭО-01")
         client = self.login(self.user_a)
         self.assertContains(client.get(reverse("profile")), "академическая 01")
+
+
+class MyGroupTests(BaseTestCase):
+    def test_lists_own_group_marks_self(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("my_group"))
+        self.assertContains(page, "Иванова Анна · вы")
+        self.assertContains(page, "Петров Борис")
+        self.assertNotContains(page, "Смирнова")  # seed-одногруппники в тестовую базу не сеются
+
+    def test_user_without_profile_404(self):
+        User = get_user_model()
+        staff = User.objects.create_user("no_profile", password=TEST_PASSWORD)
+        response = self.login(staff).get(reverse("my_group"))
+        self.assertEqual(response.status_code, 404)
 
 
 class PasswordChangeTests(BaseTestCase):

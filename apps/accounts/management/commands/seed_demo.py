@@ -116,6 +116,30 @@ class Command(BaseCommand):
                 },
             )
             users[username] = user
+
+        # Одногруппники для страницы «Моя группа» (ревью п.16): вход им не нужен,
+        # пароль unusable — заведены, чтобы демо-группа не была из двух человек.
+        for i, name in enumerate(
+            ["Смирнова Мария Андреевна", "Кузьмин Дмитрий Олегович", "Орлова Елена Викторовна"], start=1
+        ):
+            classmate, created = User.objects.get_or_create(username=f"demo_group_{i}")
+            if created:
+                classmate.set_unusable_password()
+                classmate.first_name = name.split()[1]
+                classmate.last_name = name.split()[0]
+                classmate.save()
+            StudentProfile.objects.update_or_create(
+                user=classmate,
+                defaults={
+                    "display_name": name,
+                    "faculty": "МЭО",
+                    "program": "Международные экономические отношения",
+                    "year": 1,
+                    "base_group": group,
+                    "language_group": "EN-1",
+                    "specialization": "Мировая экономика",
+                },
+            )
         self.stdout.write("Аккаунты и профили готовы")
 
         # Расписание текущей недели (Пн..Пт): общие пары + пары языковых групп.

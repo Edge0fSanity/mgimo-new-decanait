@@ -13,7 +13,8 @@
   <dt>Специализация</dt><dd>{{ profile.specialization|default:"—" }}</dd>
 </dl>
 <p class="hint">Языковая группа и специализация определяют, какие занятия попадают в ваше расписание.
-Нашли ошибку в учебных данных? <a href="{% url 'request_create_kind' 'zayavlenie' %}">Сообщите о ней</a> через заявление.</p>
+Нашли ошибку в учебных данных? <a href="{% url 'request_create_kind' 'zayavlenie' %}">Сообщите о ней</a> через заявление.
+<a href="{% url 'my_group' %}">Студенты моей группы</a></p>
 
 <h2>Контактные данные</h2>
 <form method="post" class="student-form">
