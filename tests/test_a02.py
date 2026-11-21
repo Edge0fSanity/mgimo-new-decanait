@@ -154,7 +154,7 @@ class StaffActionTests(A02Base):
         self.request_a.status = StudentRequest.Status.READY
         self.request_a.save(update_fields=["status"])
         response = self.client.get(url)
-        self.assertContains(response, "Образец, недействителен")
+        self.assertContains(response, "Образец. Не имеет юридической силы.")
         self.assertContains(response, self.request_a.public_number)
         self.assertTrue(response.headers["Content-Disposition"].startswith("attachment;"))
         self.client.force_login(self.user_b)

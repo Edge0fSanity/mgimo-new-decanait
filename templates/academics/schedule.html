@@ -28,7 +28,7 @@
           <span class="meta">Задание: {{ e.homework }}</span>
           <form method="post" action="{% url 'homework_deadline' e.pk %}">
             {% csrf_token %}
-            <button type="submit">Добавить в мои сроки</button>
+            <button type="submit" aria-label="Добавить в дедлайны: {{ e.subject }}">Добавить в дедлайны</button>
           </form>
           {% endif %}
           {% include "academics/_schedule_change.html" with entry=e show_label=True only %}

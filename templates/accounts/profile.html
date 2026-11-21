@@ -13,21 +13,28 @@
   <dt>Специализация</dt><dd>{{ profile.specialization|default:"—" }}</dd>
 </dl>
 <p class="hint">Языковая группа и специализация определяют, какие занятия попадают в ваше расписание.
-Нашли ошибку в учебных данных? <a href="{% url 'request_create_kind' 'zayavlenie' %}">Сообщите об ошибке</a> через заявление.</p>
+Нашли ошибку в учебных данных? <a href="{% url 'request_create_kind' 'zayavlenie' %}">Сообщите о ней</a> через заявление.</p>
 
 <h2>Контактные данные</h2>
-<form method="post">
+<form method="post" class="student-form">
   {% csrf_token %}
-  {{ form.as_p }}
+  {% for field in form.visible_fields %}
+  <div class="form-field">{{ field.label_tag }}{{ field }}<div id="id_{{ field.name }}_errors">{{ field.errors }}</div></div>
+  {% endfor %}
   <button type="submit" class="button">Сохранить</button>
 </form>
 
 <h2>Оформление</h2>
 <form method="post" class="student-form">
   {% csrf_token %}
-  {{ theme_form.as_p }}
+  {% for field in theme_form.visible_fields %}
+  <div class="form-field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>
+  {% endfor %}
   <button type="submit" name="save_theme" value="1" class="button secondary">Применить</button>
 </form>
 <p class="hint">Выбор сохраняется в профиле и действует на всех устройствах.</p>
 <p><a href="{% url 'password_change' %}">Сменить пароль</a></p>
+<form method="post" action="{% url 'logout' %}" class="actions">{% csrf_token %}
+  <button type="submit" class="button secondary">Выйти</button>
+</form>
 {% endblock %}

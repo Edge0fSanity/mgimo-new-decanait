@@ -57,10 +57,10 @@
     <ul class="announcements-list">
       {% for a in announcements %}
       <li>
-        {% if last_seen and a.published_at > last_seen %}<span class="new-dot" title="новое с вашего прошлого входа">●</span> {% endif %}
+        {% if last_seen and a.published_at > last_seen %}<span class="badge">Новое</span> {% endif %}
         <strong>{{ a.title }}</strong>
         <p>{{ a.body }}</p>
-        <p class="meta">опубликовано {{ a.published_at|timesince }} назад</p>
+        <p class="meta">опубликовано {% if a.published_at|timesince %}{{ a.published_at|timesince }} назад{% else %}{{ a.published_at|date:"d.m.Y H:i" }}{% endif %}</p>
       </li>
       {% endfor %}
     </ul>

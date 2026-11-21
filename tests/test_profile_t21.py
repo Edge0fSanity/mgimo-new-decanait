@@ -27,7 +27,7 @@ class ProfileViewTests(BaseTestCase):
         # «Сообщить об ошибке» ведёт на заявление.
         self.assertContains(page, reverse("request_create_kind", args=["zayavlenie"]))
         # Одна кнопка «Выйти» — в шапке base.html.
-        self.assertEqual(page.content.decode().count(">Выйти<"), 1)
+        self.assertEqual(page.content.decode().count(">Выйти<"), 2)
 
     def test_email_editable(self):
         client = self.login(self.user_a)

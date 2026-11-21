@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Кабинет студента МГИМО{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Деканат{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/css/base.css">
 </head>
@@ -12,7 +12,7 @@
 <a class="skip-link" href="#main">К основному содержанию</a>
 <header class="site-header">
   <div class="header-content">
-    <div class="brand">Кабинет студента МГИМО</div>
+    <div class="brand">Деканат</div>
     {% if user.is_authenticated %}
     <nav class="site-nav" aria-label="Основная навигация">
       <a href="{% url 'home' %}" {% if request.path == '/' %}class="active" aria-current="page"{% endif %}>Сегодня</a>

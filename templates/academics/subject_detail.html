@@ -7,7 +7,7 @@
 <p>
   {% if grade.status == 'recorded' and grade.value %}Оценка {{ grade.value }} (итог)
   {% elif grade.status == 'credit' %}Зачёт получен
-  {% elif grade.status == 'not_entered' %}Зачёт — ещё не выставлен
+  {% elif grade.status == 'not_entered' %}Преподаватель ещё не внёс оценку · ожидается
   {% else %}{{ grade.get_status_display }}{% endif %}
   {% if exam %} · экзамен {{ exam.scheduled_at|date:"d.m.Y" }} ({{ exam.get_status_display }}){% endif %}
 </p>
@@ -19,7 +19,7 @@
   {% for e in elements %}
   <li class="entry"><span class="subject">{{ e.title }}</span>
     <span class="badge {% if e.percent is None %}grade-not_entered{% else %}grade-credit{% endif %}">
-      {% if e.percent is None %}не внесено{% else %}{{ e.percent }}%{% endif %}
+      {% if e.percent is None %}Не внесено{% else %}{{ e.percent }}%{% endif %}
     </span>
   </li>
   {% endfor %}
@@ -31,7 +31,7 @@
 {% endif %}
 
 {% if not weights_set %}
-<p class="empty">Схема оценивания не задана — показываем только накопленное.</p>
+<p class="empty">Схема оценивания не задана — прогноз недоступен. Показываем только накопленное.</p>
 {% elif current_avg is None %}
 <p class="meta">Прогноз предварительный: не внесено оценок — {{ elements|length }}. Пока рассчитать цели нельзя.</p>
 {% else %}
@@ -42,7 +42,7 @@
   {% endfor %}
 </ul>
 <form method="get" action="">
-  <label for="id_n">Если получу N% на экзамене:</label>
+  <label for="id_n">Если получу {{ slider.n|default:0 }}% на экзамене:</label>
   <input type="range" id="id_n" name="n" min="0" max="100" step="1" value="{{ slider.n|default:0 }}">
   <button type="submit">Посчитать итог</button>
 </form>

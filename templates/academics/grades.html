@@ -35,12 +35,12 @@
       {% endwith %}
     </div>
     {% if c.grade.status == 'debt' and c.exam %}
-    <span class="meta">Задолженность · пересдача {{ c.exam.scheduled_at|date:"d.m.Y" }}</span>
+    <span class="meta">Задолженность · экзамен {{ c.exam.scheduled_at|date:"d.m.Y" }}</span>
       {% if c.exam.retake_at %}
       <span class="meta">Пересдача: {{ c.exam.retake_at|timezone:"Europe/Moscow"|date:"d.m.Y H:i" }}{% if c.exam.retake_room %} · ауд. {{ c.exam.retake_room }}{% endif %}</span>
       <form method="post" action="{% url 'exam_retake_deadline' c.exam.pk %}">
         {% csrf_token %}
-        <button type="submit">Добавить в мои сроки</button>
+        <button type="submit" aria-label="Добавить в дедлайны: {{ c.subject }}">Добавить в дедлайны</button>
       </form>
       {% endif %}
     {% endif %}
@@ -50,7 +50,7 @@
     <span class="meta">Текущий контроль: {{ c.current_avg }}% · схема оценивания не задана</span>
     {% endif %}
     {% if c.grade.source_label %}<span class="meta">{{ c.grade.source_label }}</span>{% endif %}
-    <span class="meta">обновлено {{ c.grade.updated_at|timesince }} назад</span>
+    <span class="meta">обновлено {% if c.grade.updated_at|timesince %}{{ c.grade.updated_at|timesince }} назад{% else %}{{ c.grade.updated_at|date:"d.m.Y H:i" }}{% endif %}</span>
   </li>
   {% endfor %}
 </ul>

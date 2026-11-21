@@ -21,7 +21,7 @@
   </dl>
   {% endif %}
   {% if obj.status == 'submitted' %}
-  <form method="post" action="{% url 'request_cancel' obj.pk %}" class="actions">
+  <form method="post" action="{% url 'request_cancel' obj.pk %}" class="actions" onsubmit="return confirm('Отменить заявку {{ obj.public_number }}? Действие необратимо.')">
     {% csrf_token %}
     <button type="submit" class="button secondary">Отменить заявку</button>
   </form>
@@ -30,7 +30,7 @@
 {% if documents or obj.status == 'ready' %}
 <section class="document-list">
   <h2>Документы</h2>
-  <p class="meta">Образец, недействителен</p>
+  <p class="meta">Образец. Не имеет юридической силы.</p>
   <div class="actions">
     {% for d in documents %}
     <a class="button" href="{% url 'document_download' d.pk %}">Скачать: {{ d.title }}</a>

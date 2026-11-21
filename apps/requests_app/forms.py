@@ -18,6 +18,13 @@ class RequestForm(forms.ModelForm):
             # Обязательность на поле: ошибка показывается у конкретного поля до отправки.
             for field in ("subtype", "organization", "purpose", "delivery_method"):
                 self.fields[field].required = True
+        # Ошибки полей связываются с инпутами: base.css:217 красит [aria-invalid="true"].
+        # После конфигурации полей: обращение к errors кэширует валидацию.
+        if self.is_bound:
+            for field in self.errors or {}:
+                if field in self.fields:
+                    self.fields[field].widget.attrs["aria-invalid"] = "true"
+                    self.fields[field].widget.attrs["aria-describedby"] = f"id_{field}_errors"
 
     class Meta:
         model = StudentRequest
