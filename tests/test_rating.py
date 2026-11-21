@@ -102,7 +102,8 @@ class GradesSummaryTests(CalculatorBase):
     def test_summary_and_card_states(self):
         client = self.login(self.user_a)
         page = client.get(reverse("grades"))
-        self.assertContains(page, "Средний рейтинг")
+        self.assertContains(page, "Сводка семестра")
+        self.assertContains(page, "grades-summary-percent")
         self.assertContains(page, "не внесено оценок — 1")
         self.assertNotContains(page, "прогноз")
         self.assertContains(page, "Зачёт получен")
