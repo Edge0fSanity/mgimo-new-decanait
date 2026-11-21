@@ -31,6 +31,14 @@
   </div>
 </header>
 <p class="disclaimer">Конкурсный концепт. Не является официальным сервисом вуза. Все данные вымышлены.</p>
+<footer class="site-links">
+  <span class="meta">Полезные ссылки:</span>
+  {% for link in useful_links %}
+    {# url «#» — заглушка, пока реальный адрес не проверен (ревью п.10). #}
+    {% if link.url == '#' %}<span class="meta">{{ link.title }}</span>
+    {% else %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>{% endif %}
+  {% endfor %}
+</footer>
 <main id="main" tabindex="-1">
   {% if messages %}
     {% for message in messages %}<p class="message {{ message.tags }}" {% if message.tags == 'error' or message.tags == 'warning' %}role="alert"{% else %}role="status"{% endif %}>{{ message }}</p>{% endfor %}

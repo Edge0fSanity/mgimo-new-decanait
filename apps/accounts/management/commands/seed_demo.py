@@ -32,6 +32,7 @@ from apps.academics.models import (
     VacationPeriod,
 )
 from apps.communications.models import Announcement, Notification
+from apps.dashboard.models import ExternalLink
 from apps.requests_app.models import DemoDocument, RequestStatusEvent, StudentRequest
 
 BASE_DIR = Path(__file__).resolve().parents[4]
@@ -165,6 +166,21 @@ class Command(BaseCommand):
             title="Летние каникулы 2027",
             defaults={"starts_at": date(2027, 6, 25), "ends_at": date(2027, 8, 31)},
         )
+
+        # Полезные ссылки (ревью п.10, п.12): Moodle и библиотека — заглушки «#»,
+        # пока реальные адреса не проверены; кафедры МЭО — найдены поиском,
+        # открытием страниц не проверены.
+        for i, (title, url) in enumerate(
+            [
+                ("Moodle МГИМО", "#"),
+                ("Библиотека МГИМО", "#"),
+                ("Кафедра МЭО и ВЭС", "https://mgimo.ru/study/faculty/meo/kmeovs/"),
+                ("Кафедра экономической теории", "https://mgimo.ru/study/faculty/meo/ket/"),
+            ]
+        ):
+            ExternalLink.objects.update_or_create(
+                title=title, defaults={"url": url, "sort_order": i, "is_active": True}
+            )
 
         # Расписание текущей недели (Пн..Пт): общие пары + пары языковых групп.
         now = timezone.localtime()
@@ -326,6 +342,7 @@ class Command(BaseCommand):
                     "add_announcement", "change_announcement", "view_announcement",
                     "add_deadline", "change_deadline", "view_deadline",
                     "add_vacationperiod", "change_vacationperiod", "view_vacationperiod",
+                    "add_externallink", "change_externallink", "view_externallink",
                     "add_group", "change_group", "view_group",
                     "add_subject", "change_subject", "view_subject",
                     "add_scheduleentry", "change_scheduleentry", "view_scheduleentry",
