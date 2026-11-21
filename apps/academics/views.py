@@ -116,10 +116,14 @@ def grades(request):
     profile = get_object_or_404(StudentProfile, user=request.user)
     # Несколько строк на дисциплину (аттестация + сессия): для карточки берём последнюю.
     by_subject = {}
-    for g in profile.grades.select_related("subject"):
+    # prefetch_related и словарь экзаменов — против N+1 (T28): 2 запроса вместо 2N.
+    for g in profile.grades.select_related("subject").prefetch_related("subject__control_elements"):
         kept = by_subject.get(g.subject_id)
         if kept is None or g.updated_at > kept.updated_at:
             by_subject[g.subject_id] = g
+    exams_by_subject = {}
+    for exam in profile.exams.order_by("scheduled_at"):
+        exams_by_subject.setdefault(exam.subject_id, exam)
     cards, ratings, debts = [], [], 0
     for grade in by_subject.values():
         subject = grade.subject
@@ -136,7 +140,7 @@ def grades(request):
             {
                 "grade": grade,
                 "subject": subject,
-                "exam": profile.exams.filter(subject=subject).order_by("scheduled_at").first(),
+                "exam": exams_by_subject.get(subject.pk),
                 "elements": elements,
                 "current_avg": round(current_avg) if current_avg is not None else None,
                 "missing_count": len(elements) - len(entered),

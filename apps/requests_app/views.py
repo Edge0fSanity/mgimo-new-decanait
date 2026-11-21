@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -17,8 +18,10 @@ KINDS = {
 
 @login_required
 def request_list(request):
-    requests = StudentRequest.objects.filter(owner=request.user)
-    return render(request, "requests_app/request_list.html", {"requests": requests})
+    page = Paginator(StudentRequest.objects.filter(owner=request.user), 20).get_page(
+        request.GET.get("page")
+    )
+    return render(request, "requests_app/request_list.html", {"page_obj": page})
 
 
 @login_required

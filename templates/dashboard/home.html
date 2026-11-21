@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load tz %}
+{% load cache tz %}
 {% block title %}Сегодня — Деканат{% endblock %}
 {% block content %}
 {% timezone "Europe/Moscow" %}
@@ -51,6 +51,8 @@
 </div>
 <section class="announcements" id="announcements">
   <h2>Объявления</h2>
+  {# T32: TTL 10 мин; last_seen в ключе — метка «новое» персональная, чужие точки показывать нельзя. #}
+  {% cache 600 announcements profile.base_group.pk last_seen|date:'YmdHis' %}
   {% if announcements %}
     <ul class="announcements-list">
       {% for a in announcements %}
@@ -63,6 +65,7 @@
       {% endfor %}
     </ul>
   {% else %}<p class="empty">Объявлений нет</p>{% endif %}
+  {% endcache %}
   <p><a href="{% url 'announcements' %}">Все объявления</a></p>
 </section>
 {% endtimezone %}

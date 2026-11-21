@@ -61,6 +61,7 @@ class Notification(models.Model):
         verbose_name = "Уведомление"
         verbose_name_plural = "Уведомления"
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["recipient", "read_at"])]  # T29: непрочитанные
 
     def __str__(self):
         return self.title

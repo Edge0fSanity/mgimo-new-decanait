@@ -107,6 +107,7 @@ class ScheduleEntry(models.Model):
         verbose_name = "Занятие"
         verbose_name_plural = "Расписание"
         ordering = ["starts_at"]
+        indexes = [models.Index(fields=["group", "starts_at"])]  # T29: фильтр расписания
         constraints = [
             models.UniqueConstraint(
                 fields=["group", "language_group", "subject", "starts_at"],
@@ -214,6 +215,11 @@ class Deadline(models.Model):
         verbose_name = "Дедлайн"
         verbose_name_plural = "Дедлайны"
         ordering = ["due_at"]
+        # T29: фильтры дашборда (group | student) + due_at >= now.
+        indexes = [
+            models.Index(fields=["group", "due_at"]),
+            models.Index(fields=["student", "due_at"]),
+        ]
 
     def clean(self):
         # Фильтры дашборда (apps/dashboard/views.py): (group | student) и due_at >= now.

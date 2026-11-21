@@ -3,12 +3,12 @@
 {% block content %}
 <h1>Мои заявки</h1>
 <div class="actions request-actions">
-  <a class="button{% if requests %} secondary{% endif %}" href="{% url 'request_create' %}">Заказать справку</a>
+  <a class="button{% if page_obj %} secondary{% endif %}" href="{% url 'request_create' %}">Заказать справку</a>
   <a class="button secondary" href="{% url 'request_create_kind' 'zayavlenie' %}">Подать заявление</a>
 </div>
-{% if requests %}
+{% if page_obj %}
 <ul class="entries">
-  {% for r in requests %}
+  {% for r in page_obj %}
   <li>
     <a class="entry request-card" href="{% url 'request_detail' r.pk %}">
       <span class="record-heading">
@@ -23,6 +23,7 @@
   </li>
   {% endfor %}
 </ul>
+{% include "_pagination.html" %}
 {% else %}
 <p class="empty">Заявок пока нет</p>
 {% endif %}
