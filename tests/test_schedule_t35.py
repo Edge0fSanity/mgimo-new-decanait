@@ -34,3 +34,9 @@ class ScheduleCountdownTests(BaseTestCase):
             page, 'data-ends-at="' + timezone.localtime(self.entry.ends_at).isoformat()
         )
         self.assertContains(page, "schedule-countdown.js")
+
+    def test_entry_card_has_no_map_link(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("schedule"))
+        self.assertNotContains(page, reverse("campus_map"))
+        self.assertNotContains(page, ">карта</a>")
