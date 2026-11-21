@@ -4,6 +4,8 @@
 {% block content %}
 {% timezone "Europe/Moscow" %}
 <h1>Преподаватели</h1>
+{# P1-5: возврат в расписание с сохранением выбранной недели. #}
+<p class="context"><a href="{% if request.GET.week_of %}{% url 'schedule' %}?view=week&amp;week_of={{ request.GET.week_of }}{% else %}{% url 'schedule' %}{% endif %}">← К расписанию</a></p>
 <form method="get" class="student-form">
   <div class="form-field">
     <label for="id_q">Фамилия преподавателя</label>

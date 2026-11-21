@@ -17,6 +17,21 @@ class ScheduleWeekNavTests(BaseTestCase):
         # В режиме «Сегодня» переходов по неделям нет.
         self.assertNotContains(client.get("/schedule/?view=today"), "week_of=")
 
+    def test_schedule_links_to_teachers_and_free_rooms(self):
+        """P1-5: явные входы в «Преподаватели» и «Аудитории», неделя передаётся для возврата."""
+        client = self.login(self.user_a)
+        page = client.get("/schedule/?view=week&week_of=2026-12-28")
+        self.assertContains(page, "teachers/?week_of=2026-12-28")
+        self.assertContains(page, "free-rooms/?week_of=2026-12-28")
+        # В режиме «Сегодня» неделя не передаётся.
+        page = client.get("/schedule/?view=today")
+        self.assertContains(page, "teachers/")
+
+    def test_teachers_back_link_preserves_week(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("teachers"), {"week_of": "2026-12-28"})
+        self.assertContains(page, "view=week&amp;week_of=2026-12-28")
+
 
 class MarkAllNotificationsReadTests(BaseTestCase):
     def test_mark_all_touches_only_own_and_get_is_405(self):

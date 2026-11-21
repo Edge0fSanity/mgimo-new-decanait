@@ -14,6 +14,11 @@
   {% endif %}
   {% if view == 'week' and shows_today %}<a class="jump-today" href="#schedule-today">К текущему дню ↓</a>{% endif %}
 </nav>
+{# P1-5: явные входы в «Преподаватели» и «Аудитории»; неделя передаётся для возврата. #}
+<nav class="view-switch" aria-label="Поиск по расписанию">
+  <a href="{% url 'teachers' %}{% if view == 'week' %}?week_of={{ week_of }}{% endif %}">Преподаватели</a>
+  <a href="{% url 'free_rooms' %}{% if view == 'week' %}?week_of={{ week_of }}{% endif %}">Аудитории</a>
+</nav>
 {% for day in days %}
   <section class="day{% if day.is_today %} current-day{% endif %}"{% if day.is_today %} id="schedule-today" tabindex="-1"{% endif %}>
     <h2>{{ day.date|date:"l" }}{% if day.is_today %} (сегодня){% endif %}, {{ day.date|date:"d.m.Y" }}</h2>

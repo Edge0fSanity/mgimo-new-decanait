@@ -140,17 +140,20 @@ def teachers(request):
     selected = request.GET.get("teacher", "").strip()
     names, entries = [], []
     if query:
-        names = list(
-            ScheduleEntry.objects.filter(teacher__icontains=query)
-            .values_list("teacher", flat=True)
+        # icontains в SQLite регистрозависим для кириллицы («смирнов» не находит
+        # «Смирнов») — сравниваем нижний регистр в Python (P1-5).
+        q_lower = query.lower()
+        names = [
+            name
+            for name in ScheduleEntry.objects.values_list("teacher", flat=True)
             .distinct()
             .order_by("teacher")
-        )
+            if q_lower in name.lower()
+        ]
     if selected:
-        moscow = ZoneInfo("Europe/Moscow")
-        start = datetime.combine(timezone.localdate(timezone=moscow), time.min, moscow)
+        # Идущая сейчас пара видна, завершившиеся — нет: фильтр по концу пары (P1-5).
         entries = (
-            ScheduleEntry.objects.filter(teacher=selected, starts_at__gte=start)
+            ScheduleEntry.objects.filter(teacher=selected, ends_at__gte=timezone.now())
             .select_related("subject", "group")
             .order_by("starts_at")[:20]
         )
