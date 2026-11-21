@@ -165,3 +165,29 @@ D-P011 | 21.11.2026 | Аудит-фиксы (7 находок ponytail-ауди�
 
 Ошибки и исправления: patch для Subject.clean() сначала попал в clean() ScheduleEntry (потерялась проверка ends_at) — восстановлено; тест весов с float 0.4/0.1 падал на DecimalField(2 знака) — переписан на Decimal.
 Стоимость: неизвестно. Ручные действия: нет.
+
+D-P012 | 21.11.2026 | Ревью производительности: T27–T30, T32 (T31/T33/T34 — отдельным проходом).
+
+Пользователь: «Реши оставшиеся задачи из tasks.md. Используй субагентов для отдельных задач».
+
+Инструмент: Hermes Agent (модель MiniMax-M2.5-NVFP4), реализация — 2 параллельных субагента (ponytail), слияние веток в master капитаном.
+
+Результат: T27 — DATABASES из env (DJANGO_DB_ENGINE, дефолт sqlite3; postgres через DJANGO_DB_NAME/USER/PASSWORD/HOST/PORT), DJANGO_DB_PATH → DJANGO_DB_NAME, D-ADR-18. T28 — prefetch control_elements + словарь экзаменов одним запросом в grades и _rating_hint; тест: число запросов grades не растёт 1→6 дисциплин. T29 — индексы ScheduleEntry(group,starts_at), Deadline(group,due_at), Deadline(student,due_at), Notification(recipient,read_at) — две миграции (модели в разных приложениях). T30 — Paginator 20/стр (get_page) на заявках/уведомлениях/архиве, общий партиал _pagination.html; контекстные ключи заменены на page_obj. T32 — {% cache 600 %} блока объявлений; в ключ добавлен last_seen — метка «новое» (T19) персональная, кэш только по группе показывал бы чужие точки.
+
+Команды и фактический вывод: `uv run python manage.py test tests` → 82 теста OK (было 80; +2: запросы grades, пагинация); manage.py check — без замечаний; hermes verify --json → ok=true у обоих субагентов.
+
+Ограничения: postgres-конфиг проверен на уровне сборки настроек — реальное подключение невозможно до драйвера (добавляется с T34); эффект кэша под нагрузкой не замерялся; CSS для .pagination не добавлялся.
+Стоимость: неизвестно. Ручные действия: нет.
+
+D-P013 | 21.11.2026 | Ревью производительности: T31, T33, T34 (docker-обвязка).
+
+Пользователь: «Реши оставшиеся задачи из tasks.md. Используй субагентов для отдельных задач» (продолжение D-P012).
+
+Инструмент: Hermes Agent (модель MiniMax-M2.5-NVFP4), реализация — 1 субагент (ponytail), слияние в master капитаном.
+
+Результат: T34 — Dockerfile (python:3.12-slim, uv sync, entrypoint migrate + collectstatic + gunicorn, HEALTHCHECK /login/), compose.yaml (web + db postgres:16-alpine + caddy:2-alpine, тома postgres-data/staticfiles/media, наружу только 80/443), Dockerfile.caddy (Caddy с caddy-ratelimit, собран xcaddy; GOPROXY=goproxy.cn — proxy.golang.org в этой сети stall'ился), Caddyfile (reverse_proxy, tls internal для локальной проверки, rate limit на /login/ и /admin/login/), .env.example расширен (плейсхолдеры CHANGE_ME, fail-fast без дефолтного пароля), D-ADR-19. T33 — gunicorn 27.0.1 (воркеры ${GUNICORN_WORKERS:-3}); rate limit только на уровне Caddy — в Django-коде его нет, дублирования нет. T31 — collectstatic в entrypoint, статика раздаёт Caddy с общего тома, WhiteNoise не добавлен; чек-лист A05 в README. Зависимости: только psycopg[binary] 3.3.9 и gunicorn (uv add).
+
+Команды и фактический вывод: docker compose up -d --build — все 3 сервиса healthy; https://localhost/login/ → 200, http → 308, /static/css/base.css → 200 (Caddy), /admin/login/ → 200; rate limit подтверждён (19×200 → 429); end-to-end: seed_demo в контейнере, POST логина demo_a через Caddy+Postgres+gunicorn → 302, дашборд → 200; после проверки compose down -v. `uv run python manage.py test tests` → 82 теста OK; manage.py check — без замечаний; hermes verify --json → ok=true.
+
+Ограничения: миграция данных SQLite→Postgres (dumpdata→loaddata) — задокументирована в README, фактически не прогонялась; TLS Let's Encrypt на реальном домене не проверялся (только tls internal; для прода удалить строку 'tls internal' — описано в README); сборка Caddy-образа ~15 мин на медленной сети.
+Стоимость: неизвестно. Ручные действия: нет.
