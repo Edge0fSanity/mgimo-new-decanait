@@ -7,3 +7,10 @@ dependencies = [
     "django>=5.2,<5.3",
     "argon2-cffi>=23.1",
 ]
+
+[project.optional-dependencies]
+# Только для прод-обвязки (Docker, T34): сервер приложений и драйвер Postgres.
+prod = [
+    "gunicorn>=23",
+    "psycopg[binary]>=3.2",
+]

@@ -56,6 +56,34 @@ Django Admin — /admin/, заголовок «Цифровой деканат �
 
 Восстановление доступа: при утере пароля суперпользователя — `uv run python manage.py changepassword <username>` (или `python manage.py shell` + `user.set_password(...)`/`save()` для любого служебного аккаунта); при утере имени — `uv run python manage.py shell -c "from django.contrib.auth import get_user_model; print('\\n'.join(u.username for u in get_user_model().objects.filter(is_superuser=True)))"`. Пароли передавать только защищённым каналом, в Git и evidence не включать.
 
+# Деплой (Docker Compose, T34/A05)
+
+Состав: web (gunicorn, migrate+collectstatic при старте), db (Postgres 16), caddy (HTTPS 80/443, раздача /static/, reverse proxy). Rate limit на обе формы входа — в приложении (см. D-ADR-19).
+
+Первый запуск:
+
+    cp .env.example .env    # заполнить DJANGO_SECRET_KEY, POSTGRES_PASSWORD, SITE_ADDRESS (публичный домен), DJANGO_ALLOWED_HOSTS, DJANGO_CSRF_TRUSTED_ORIGINS
+    docker compose up -d --build
+    # миграции и collectstatic применяются при старте web; проверить:
+    curl -k https://localhost/login/    # при SITE_ADDRESS=localhost (самоподписанный сертификат)
+
+Демо-аккаунты после первого запуска (внутри контейнера web):
+
+    docker compose exec web python manage.py seed_demo
+
+Обновление: `git pull && docker compose build && docker compose up -d` (откат — предыдущий образ). Перенос данных SQLite → Postgres: на старом стеке `uv run python manage.py dumpdata -o dump.json`, затем `docker compose exec -T web python manage.py loaddata - < dump.json` (объёмы малые, см. D-ADR-18).
+
+Бэкап и восстановление (проверять в отдельной среде, D-Q09):
+
+    # бэкап Postgres (прод):
+    docker compose exec db pg_dump -U decanat decanat > backup-$(date +%F).sql
+    # восстановление:
+    cat backup-2026-11-21.sql | docker compose exec -T db psql -U decanat decanat
+    # бэкап SQLite (разработка):
+    sqlite3 db.sqlite3 ".backup 'backup-2026-11-21.sqlite3'"
+
+Рекомендуется ежедневный cron-бэкап с проверкой восстановления; данные жюри до 28.11 не сбрасывать.
+
 # 
 
 # 00 README — Деканат · паспорт и план

@@ -1,0 +1,15 @@
+.git
+.venv
+.afk
+.secrets
+.hermes
+db.sqlite3
+media
+staticfiles
+evidence
+docs
+sources
+scripts
+**/__pycache__
+**/*.pyc
+.env
