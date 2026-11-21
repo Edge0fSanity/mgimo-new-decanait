@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
 
-from .models import Deadline, Exam, Grade, ScheduleEntry, Subject, percent_to_mark
+from .models import Deadline, Exam, Grade, Room, ScheduleEntry, Subject, percent_to_mark
 
 # Соц. блок (0,1) нигде не вводится — считаем зачтённым (100%).
 SOCIAL_PERCENT = 100
@@ -137,6 +137,43 @@ def teachers(request):
         request,
         "academics/teachers.html",
         {"query": query, "names": names, "selected": selected, "entries": entries},
+    )
+
+
+@login_required
+def free_rooms(request):
+    """Свободные аудитории корпуса на выбранные дату и интервал (ревью п.14)."""
+    get_object_or_404(StudentProfile, user=request.user)
+    moscow = ZoneInfo("Europe/Moscow")
+    day, start_t, end_t = timezone.localdate(timezone=moscow), time(9, 0), time(21, 0)
+    error = None
+    try:
+        if request.GET.get("date"):
+            day = date.fromisoformat(request.GET["date"])
+        if request.GET.get("start"):
+            start_t = time.fromisoformat(request.GET["start"])
+        if request.GET.get("end"):
+            end_t = time.fromisoformat(request.GET["end"])
+    except ValueError:
+        error = "Неверная дата или время"
+    if error is None and start_t >= end_t:
+        error = "Конец интервала должен быть позже начала"
+    free = []
+    if error is None:
+        start_dt = datetime.combine(day, start_t, moscow)
+        end_dt = datetime.combine(day, end_t, moscow)
+        busy = ScheduleEntry.objects.filter(starts_at__lt=end_dt, ends_at__gt=start_dt).values_list("room", flat=True)
+        free = list(Room.objects.exclude(name__in=busy))
+    return render(
+        request,
+        "academics/free_rooms.html",
+        {
+            "day": day,
+            "start_t": start_t,
+            "end_t": end_t,
+            "free": free,
+            "error": error,
+        },
     )
 
 

@@ -26,6 +26,7 @@ from apps.academics.models import (
     Exam,
     Grade,
     Group,
+    Room,
     ScheduleEntry,
     Subject,
 )
@@ -141,6 +142,10 @@ class Command(BaseCommand):
                 },
             )
         self.stdout.write("Аккаунты и профили готовы")
+
+        # Справочник аудиторий корпуса (ревью п.14): те же, что в плане расписания.
+        for room in ["Ауд. 301", "Ауд. 112", "Ауд. 118", "Ауд. 205", "Ауд. 401", "Ауд. 210"]:
+            Room.objects.get_or_create(name=room)
 
         # Расписание текущей недели (Пн..Пт): общие пары + пары языковых групп.
         now = timezone.localtime()

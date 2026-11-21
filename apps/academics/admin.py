@@ -7,6 +7,7 @@ from apps.academics.models import (
     Exam,
     Grade,
     Group,
+    Room,
     ScheduleEntry,
     Subject,
 )
@@ -15,6 +16,7 @@ admin.site.register(Group)
 admin.site.register(Grade)
 admin.site.register(Exam)
 admin.site.register(Deadline)
+admin.site.register(Room)
 
 
 class CurrentControlElementInline(admin.TabularInline):

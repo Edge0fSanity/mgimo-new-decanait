@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Свободные аудитории — Деканат{% endblock %}
+{% block content %}
+<h1>Свободные аудитории</h1>
+<form method="get" class="student-form">
+  <div class="form-field">
+    <label for="id_date">Дата</label>
+    <input type="date" id="id_date" name="date" value="{{ day|date:'Y-m-d' }}">
+  </div>
+  <div class="form-field">
+    <label for="id_start">Начало</label>
+    <input type="time" id="id_start" name="start" value="{{ start_t|time:'H:i' }}">
+  </div>
+  <div class="form-field">
+    <label for="id_end">Конец</label>
+    <input type="time" id="id_end" name="end" value="{{ end_t|time:'H:i' }}">
+  </div>
+  <button type="submit" class="button">Показать</button>
+</form>
+{% if error %}
+<p class="empty" role="alert">{{ error }}</p>
+{% else %}
+<ul class="entries">
+  {% for room in free %}
+  <li class="entry"><span class="subject">{{ room }}</span><span class="meta">свободна</span></li>
+  {% empty %}
+  <li class="entry"><span class="meta">Свободных аудиторий нет — все заняты</span></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

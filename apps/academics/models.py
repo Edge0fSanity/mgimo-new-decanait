@@ -91,6 +91,20 @@ class CurrentControlElement(models.Model):
         return f"{self.subject}: {self.title}"
 
 
+class Room(models.Model):
+    """Аудитория корпуса; name совпадает со строкой ScheduleEntry.room (ревью п.14)."""
+
+    name = models.CharField("Аудитория", max_length=64, unique=True)
+
+    class Meta:
+        verbose_name = "Аудитория"
+        verbose_name_plural = "Аудитории"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class ScheduleEntry(models.Model):
     """Занятие. language_group пуст => занятие всей основной группы."""
 
