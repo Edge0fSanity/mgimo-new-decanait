@@ -47,7 +47,12 @@ class ProfileViewTests(BaseTestCase):
         )
         self.assertEqual(Group(code="МЭО-01").code_description, "МЭО-01")
         client = self.login(self.user_a)
-        self.assertContains(client.get(reverse("profile")), "академическая 01")
+        page = client.get(reverse("profile"))
+        # Ревью P1-6: академическая и языковая группы — раздельные поля,
+        # без склейки-расшифровки кода вида «языковая 01 … EN-2».
+        self.assertContains(page, "Академическая группа")
+        self.assertContains(page, "Языковая группа")
+        self.assertNotContains(page, "языковая 01")
 
 
     def test_login_section_shows_username(self):
@@ -55,6 +60,13 @@ class ProfileViewTests(BaseTestCase):
         page = client.get(reverse("profile"))
         self.assertContains(page, "Вход и пароль")
         self.assertContains(page, self.user_a.username)
+
+    def test_access_hint_mentions_demo_team_not_deanery(self):
+        # Ревью P1-6: это демо — никакого «пароля от деканата» и учебного офиса.
+        page = self.login(self.user_a).get(reverse("profile"))
+        self.assertContains(page, "Доступ выдаёт команда демо")
+        self.assertNotContains(page, "Пароль выдан деканатом")
+        self.assertNotContains(page, "учебный офис")
 
 
 class MyGroupTests(BaseTestCase):
