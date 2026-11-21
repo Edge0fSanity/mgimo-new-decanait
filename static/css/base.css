@@ -2,6 +2,7 @@
   --ink: #162039;
   --accent: #234bc0;
   --accent-solid: #234bc0;
+  --brand: #a6093d; /* фирменный красный МГИМО (ревью п.7); только бренд-знак, не --accent/--danger */
   --line: #d3dce9;
   --bg: #f3f5fa;
   --muted: #4c5c73;
@@ -21,6 +22,7 @@
 .theme-dark {
   --ink: #e6ecf5;
   --accent: #79a5d7;
+  --brand: #e56b8a; /* светлее для контраста на тёмном фоне */
   --line: #33415a;
   --bg: #10151d;
   --muted: #9fb0c8;
@@ -80,7 +82,7 @@ a { color: var(--accent); text-underline-offset: .18em; }
     linear-gradient(#fff, #fff) 50% 34% / 48% 2px no-repeat,
     linear-gradient(#fff, #fff) 50% 51% / 48% 2px no-repeat,
     linear-gradient(#fff, #fff) 38% 68% / 30% 2px no-repeat,
-    var(--accent-solid);
+    var(--brand);
 }
 .site-nav { display: flex; align-items: center; gap: .125rem; }
 .site-nav a, .bell {
