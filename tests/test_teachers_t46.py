@@ -1,5 +1,6 @@
 """Тесты ревью п.11 (T46): поиск преподавателя по фамилии и его расписание."""
-from datetime import timedelta
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from django.urls import reverse
 from django.utils import timezone
@@ -14,6 +15,8 @@ class TeachersTests(BaseTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.subject = Subject.objects.create(title="Тестовый предмет поиска")
+        # Будущая пара (не «сегодня в фиксированный час»): тест «ближайших
+        # занятий» требует ends_at >= now в любое время суток.
         cls.entry = ScheduleEntry.objects.create(
             group=cls.user_a.student_profile.base_group,
             language_group="",
@@ -90,6 +93,17 @@ class TeachersTests(BaseTestCase):
         self.assertNotContains(page, "ближайшие занятия")
 
     def test_schedule_teacher_name_links_to_search(self):
+        # Ссылка на поиск появляется в карточке пары «Сегодня»: нужна пара сегодня
+        # (фиксированный час — now()+offset после 22:00 уезжает на завтра).
+        ScheduleEntry.objects.create(
+            group=self.user_a.student_profile.base_group,
+            language_group="",
+            subject=self.subject,
+            starts_at=datetime.combine(timezone.localdate(), time(12, 0), ZoneInfo("Europe/Moscow")),
+            ends_at=datetime.combine(timezone.localdate(), time(13, 30), ZoneInfo("Europe/Moscow")),
+            room="213",
+            teacher="Кузнецова Ольга",
+        )
         client = self.login(self.user_a)
         page = client.get(reverse("schedule"))
         self.assertContains(page, "teachers/?teacher=")

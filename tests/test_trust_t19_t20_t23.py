@@ -1,5 +1,6 @@
 """Тесты T19/T20/T23: слой доверия, пересдача в сроках, задание с пары."""
-from datetime import timedelta
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from django.contrib import admin
 from django.urls import reverse
@@ -91,9 +92,14 @@ class RetakeDeadlineTests(TrustBase):
 
 class HomeworkTests(TrustBase):
     def setUp(self):
-        # Карточка пары рендерится в виде «Сегодня»: занятие переносим на текущий день.
-        self.entry.starts_at = timezone.now() + timedelta(hours=1)
-        self.entry.ends_at = timezone.now() + timedelta(hours=2)
+        # Карточка пары рендерится в виде «Сегодня»: занятие переносим на текущий
+        # день (фиксированный час — now()+offset после 22:00 уезжает на завтра).
+        self.entry.starts_at = datetime.combine(
+            timezone.localdate(), time(21, 0), ZoneInfo("Europe/Moscow")
+        )
+        self.entry.ends_at = datetime.combine(
+            timezone.localdate(), time(22, 0), ZoneInfo("Europe/Moscow")
+        )
         self.entry.homework = "Прочитать главу 3, задача 5"
         self.entry.save()
         self.url = reverse("homework_deadline", args=[self.entry.pk])
@@ -111,7 +117,11 @@ class HomeworkTests(TrustBase):
         self.assertRedirects(response, reverse("schedule"))
         deadline = Deadline.objects.get(student=self.user_a.student_profile)
         self.assertEqual(deadline.title, f"Задание: {self.subject} ({self.entry.starts_at:%d.%m})")
-        self.assertEqual(deadline.due_at, self.entry.starts_at)
+        if self.entry.starts_at > timezone.now():
+            self.assertEqual(deadline.due_at, self.entry.starts_at)
+        else:
+            # После 21:00 пара уже прошедшая — срок уходит на конец следующего дня.
+            self.assertGreater(deadline.due_at, timezone.now())
         client.post(self.url)
         self.assertEqual(Deadline.objects.count(), 1)
 

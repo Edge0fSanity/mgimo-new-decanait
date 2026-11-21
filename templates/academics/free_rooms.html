@@ -2,6 +2,7 @@
 {% block title %}Аудитории без занятий по расписанию — Деканат{% endblock %}
 {% block content %}
 <h1>Аудитории без занятий по расписанию</h1>
+{% if week_of %}<p class="context"><a href="{% url 'schedule' %}?view=week&amp;week_of={{ week_of }}">← К расписанию</a></p>{% endif %}
 <form method="get" class="student-form">
   <div class="form-field">
     <label for="id_date">Дата</label>

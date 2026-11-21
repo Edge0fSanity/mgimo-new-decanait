@@ -1,5 +1,6 @@
 """T35: разметка расписания отдаёт даты занятий и подключает клиентский отсчёт."""
-from datetime import timedelta
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from django.urls import reverse
 from django.utils import timezone
@@ -18,8 +19,10 @@ class ScheduleCountdownTests(BaseTestCase):
             group=cls.user_a.student_profile.base_group,
             language_group="",
             subject=cls.subject,
-            starts_at=timezone.now() + timedelta(hours=2),
-            ends_at=timezone.now() + timedelta(hours=3, minutes=30),
+            # Фиксированный час сегодня, а не now()+offset: после 22:00 сдвиг
+            # уезжает на завтра и пара исчезает из вида «Сегодня».
+            starts_at=datetime.combine(timezone.localdate(), time(21, 0), ZoneInfo("Europe/Moscow")),
+            ends_at=datetime.combine(timezone.localdate(), time(22, 30), ZoneInfo("Europe/Moscow")),
             room="213",
             teacher="Тестовый преподаватель",
         )

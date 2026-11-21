@@ -168,6 +168,7 @@ def teachers(request):
 def free_rooms(request):
     """Аудитории без занятий по расписанию на выбранные дату и интервал (ревью п.14, P0-3)."""
     get_object_or_404(StudentProfile, user=request.user)
+    week_of = request.GET.get("week_of", "")
     moscow = ZoneInfo("Europe/Moscow")
     day, start_t, end_t = timezone.localdate(timezone=moscow), time(9, 0), time(21, 0)
     error = None
@@ -206,6 +207,7 @@ def free_rooms(request):
             "end_t": end_t,
             "free": free,
             "error": error,
+            "week_of": week_of,
             "no_schedule": no_schedule,
             "empty_rooms": empty_rooms,
         },
