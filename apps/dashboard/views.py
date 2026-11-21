@@ -24,6 +24,8 @@ def _rating_hint(profile, now):
             )
         )
         .order_by(F("next_at").asc(nulls_last=True), "pk")
+        # prefetch — против N+1 по control_elements в цикле ниже (T28).
+        .prefetch_related("control_elements")
     )
     for subject in candidates:
         entered = [float(e.percent) for e in subject.control_elements.all() if e.percent is not None]

@@ -2,9 +2,9 @@
 {% block title %}Объявления — Деканат{% endblock %}
 {% block content %}
 <h1>Объявления</h1>
-{% if announcements %}
+{% if page_obj %}
 <ul class="announcements-list">
-  {% for a in announcements %}
+  {% for a in page_obj %}
   <li>
     <strong>{{ a.title }}</strong>
     <p>{{ a.body }}</p>
@@ -12,5 +12,6 @@
   </li>
   {% endfor %}
 </ul>
+{% include "_pagination.html" %}
 {% else %}<p class="empty">Объявлений нет</p>{% endif %}
 {% endblock %}

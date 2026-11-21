@@ -7,9 +7,9 @@
   {% csrf_token %}<button type="submit" class="text-button">Отметить все прочитанными</button>
 </form>
 {% endif %}
-{% if notifications %}
+{% if page_obj %}
 <ul class="entries">
-  {% for n in notifications %}
+  {% for n in page_obj %}
   <li class="entry notification{% if not n.read_at %} unread{% endif %}">
     <div class="record-heading">
       <span class="subject">{{ n.title }}</span>
@@ -37,5 +37,6 @@
   </li>
   {% endfor %}
 </ul>
+{% include "_pagination.html" %}
 {% else %}<p class="empty">Уведомлений нет</p>{% endif %}
 {% endblock %}
