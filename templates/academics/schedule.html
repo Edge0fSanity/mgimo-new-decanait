@@ -20,7 +20,7 @@
     {% if day.entries %}
       <ul class="entries">
         {% for e in day.entries %}
-        <li class="entry{% if e.old_starts_at or e.old_room %} rescheduled{% endif %}">
+        <li class="entry{% if e.old_starts_at or e.old_room %} rescheduled{% endif %}" data-starts-at="{{ e.starts_at|date:'c' }}" data-ends-at="{{ e.ends_at|date:'c' }}">
           <span class="time">{{ e.starts_at|date:"H:i" }}–{{ e.ends_at|date:"H:i" }}</span>
           <span class="subject">{{ e.subject }}</span>
           <span class="meta">{{ e.room }} · {{ e.teacher }}</span>
@@ -41,4 +41,6 @@
   </section>
 {% endfor %}
 {% endtimezone %}
+{# T35: отсчёт до ближайшей пары считается на клиенте по data-атрибутам выше. #}
+<script src="/static/js/schedule-countdown.js"></script>
 {% endblock %}

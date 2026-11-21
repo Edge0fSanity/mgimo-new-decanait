@@ -1,7 +1,7 @@
 """Идемпотентный seed двух вымышленных студентов.
 
-Расписание создаётся на текущую неделю: идемпотентность действует внутри одной
-недели; повторный запуск в другой неделе добавит новые занятия (старые остаются).
+Расписание создаётся на текущую и следующую неделю: идемпотентность действует
+внутри недели; повторный запуск в другой неделе добавит новые занятия (старые остаются).
 Пароли не хранятся в коде: берутся из env DEMO_STUDENT_A_PASSWORD /
 DEMO_STUDENT_B_PASSWORD; если не заданы — генерируются случайно и один раз
 записываются в gitignored файл .secrets/demo_passwords.txt (в stdout печатается
@@ -127,28 +127,36 @@ class Command(BaseCommand):
             (3, 13, "Иностранный язык", "EN-2", "Ауд. 118", "Орлова Мария"),
             (4, 10, "История международных отношений", "", "Ауд. 205", "доц. Волков Игорь"),
         ]
-        for day, hour, subject, lang, room, teacher in plan:
-            starts = monday + timedelta(days=day, hours=hour)
-            entry, created = ScheduleEntry.objects.get_or_create(
-                group=group,
-                language_group=lang,
-                subject=subjects[subject],
-                starts_at=starts,
-                defaults={
-                    "ends_at": starts + timedelta(hours=1, minutes=30),
-                    "room": room,
-                    "teacher": teacher,
-                },
-            )
-            # Демонстрационный перенос: занятие EN-1 в четверг было в 13:00, стало в 15:00.
-            if created and lang == "EN-1" and day == 3:
-                entry.old_starts_at = starts - timedelta(hours=2)
-                entry.old_room = "Ауд. 112"
-                entry.change_reason = "Перенос по болезни преподавателя"
-                entry.change_source_role = "Деканат"
-                entry.changed_at = timezone.now()
-                entry.save()
-        self.stdout.write("Расписание недели готово")
+        # Две недели: в выходные текущая неделя уже в прошлом — без следующей
+        # недели кабинет показывает «Предстоящих занятий нет».
+        for week_offset in (0, 1):
+            for day, hour, subject, lang, room, teacher in plan:
+                starts = monday + timedelta(weeks=week_offset, days=day, hours=hour)
+                entry, created = ScheduleEntry.objects.get_or_create(
+                    group=group,
+                    language_group=lang,
+                    subject=subjects[subject],
+                    starts_at=starts,
+                    defaults={
+                        "ends_at": starts + timedelta(hours=1, minutes=30),
+                        "room": room,
+                        "teacher": teacher,
+                    },
+                )
+                # Демонстрационный перенос: занятие EN-1 в четверг было в 13:00, стало в 15:00.
+                if created and week_offset == 0 and lang == "EN-1" and day == 3:
+                    entry.old_starts_at = starts - timedelta(hours=2)
+                    entry.old_room = "Ауд. 112"
+                    entry.change_reason = "Перенос по болезни преподавателя"
+                    entry.change_source_role = "Деканат"
+                    entry.changed_at = timezone.now()
+                    entry.save()
+                # Демо-задание у перенесённой пары: без него фича
+                # «Добавить в дедлайны» (T23) в демо не видна.
+                if week_offset == 0 and lang == "EN-1" and day == 3 and not entry.homework:
+                    entry.homework = "Подготовить эссе по теме занятия"
+                    entry.save(update_fields=["homework"])
+        self.stdout.write("Расписание двух недель готово")
 
         # Одна демо-заявка у A, только если у него ещё нет ни одной.
         a = users["demo_a"]
@@ -197,17 +205,26 @@ class Command(BaseCommand):
             )
         self.stdout.write("Оценки и экзамены готовы")
 
-        # Дедлайны: один на группу, один персональный у A.
-        Deadline.objects.get_or_create(
-            group=group,
-            title="Заявление на пересдачу — приём до конца недели",
-            defaults={"due_at": monday + timedelta(days=4, hours=18)},
-        )
-        Deadline.objects.get_or_create(
-            student=profiles["demo_a"],
-            title="Справка в ВУЦ — до четверга",
-            defaults={"due_at": monday + timedelta(days=3, hours=18)},
-        )
+        # Дедлайны: один на группу, один персональный у A. Привязаны к «сейчас»,
+        # а не к неделе seed: при запуске в конце недели привязка к понедельнику
+        # даёт уже истёкшие дедлайны и пустой блок на главной. При повторном
+        # seed истёкшие демо-дедлайны поднимаются (данные не стираются).
+        demo_deadlines = [
+            (Deadline(group=group, title="Заявление на пересдачу"), timedelta(days=4)),
+            (Deadline(student=profiles["demo_a"], title="Справка в ВУЦ"), timedelta(days=3)),
+        ]
+        now = timezone.localtime()
+        for deadline, due_in in demo_deadlines:
+            existing = Deadline.objects.filter(
+                group=deadline.group, student=deadline.student, title=deadline.title
+            ).first()
+            if existing:
+                if existing.due_at < now:
+                    existing.due_at = now + due_in
+                    existing.save(update_fields=["due_at"])
+            else:
+                deadline.due_at = now + due_in
+                deadline.save()
 
         # Объявление и уведомления (read_at остаётся пустым — студент прочитает сам).
         announcement, _ = Announcement.objects.get_or_create(
