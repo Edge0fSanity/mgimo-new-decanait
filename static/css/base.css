@@ -371,5 +371,7 @@ h2 { font-size: 1.125rem; line-height: 1.3; }
   .site-nav a { flex: 1 1 auto; padding: .38rem .15rem; font-size: clamp(.75rem, 3.6vw, .875rem); text-align: center; }
   .header-logout { display: none; }
   main { padding-bottom: calc(var(--bottom-nav-height) + 1.5rem); }
+  /* P1-5: футер идёт после main — без отступа фиксированная панель перекрывает его ссылки. */
+  .site-links { padding-bottom: calc(var(--bottom-nav-height) + .75rem); }
   .today-heading { display: grid; }
 }
