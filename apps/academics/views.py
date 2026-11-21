@@ -3,10 +3,13 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 
 from apps.accounts.models import StudentProfile
 
@@ -77,6 +80,7 @@ def schedule(request):
     view = request.GET.get("view", "today")
     moscow = ZoneInfo("Europe/Moscow")
     today = timezone.localdate(timezone=moscow)
+    week_of = None
     if view == "week":
         week_of = today
         prev_week = next_week = None
@@ -122,6 +126,7 @@ def schedule(request):
             "shows_today": start.date() <= today < end.date(),
             "prev_week": prev_week if view == "week" else None,
             "next_week": next_week if view == "week" else None,
+            "week_of": week_of.isoformat() if view == "week" else None,
             "profile": profile,
         },
     )
@@ -344,13 +349,29 @@ def add_homework_deadline(request, pk):
         pk=pk,
         homework__gt="",
     )
+    now = timezone.localtime()
+    due_at = entry.starts_at
+    if due_at < now:
+        # Старая пара: срок в прошлом бессмыслен — дедлайн на конец следующего дня.
+        due_at = timezone.make_aware(datetime.combine(now.date() + timedelta(days=1), time(23, 59)))
     Deadline.objects.get_or_create(
         student=profile,
         # Дата занятия в заголовке: иначе второе задание по тому же предмету
         # найдёт первый дедлайн и не создастся.
         title=f"Задание: {entry.subject} ({entry.starts_at:%d.%m})",
-        defaults={"due_at": entry.starts_at},
+        defaults={"due_at": due_at},
     )
+    messages.success(
+        request,
+        mark_safe(f'Добавлено в дедлайны — <a href="{reverse("deadlines")}">открыть дедлайны</a>'),
+    )
+    # Возврат на выбранную неделю (ревью P0-2): week_of приходит скрытым полем формы.
+    try:
+        requested = date.fromisoformat(request.POST.get("week_of", ""))
+    except ValueError:
+        return redirect("schedule")
+    if 1 < requested.year < 9999:
+        return redirect(f"{reverse('schedule')}?view=week&week_of={requested.isoformat()}")
     return redirect("schedule")
 
 
