@@ -165,3 +165,16 @@ D-P011 | 21.11.2026 | Аудит-фиксы (7 находок ponytail-ауди�
 
 Ошибки и исправления: patch для Subject.clean() сначала попал в clean() ScheduleEntry (потерялась проверка ends_at) — восстановлено; тест весов с float 0.4/0.1 падал на DecimalField(2 знака) — переписан на Decimal.
 Стоимость: неизвестно. Ручные действия: нет.
+
+D-P012 | 21.11.2026 | AFK-проход: 404/500, rate limit логина, T34 docker-обвязка.
+
+Пользователь: вызов скилла afk (автономная работа над проектом на ветке afk/2026-11-21 от master b792603; идеи и evidence — .afk/2026-11-21.md, в Git не попадает).
+
+Инструмент: Hermes Agent (модель MiniMax-M2.5-NVFP4), реализация напрямую (без субагентов).
+
+Результат: (1) Кастомные templates/404.html и 500.html в стиле base.html — при DEBUG=False мёртвая ссылка отдаёт страницу кабинета, а не голое «Not Found»; тест tests/test_error_pages.py. (2) Троттлинг POST-попыток входа (чек-лист A05): 5 на пару IP+логин и 30 на IP за 5 минут через кэш, обёрнуты обе формы — /login/ и /admin/login/ (config/urls.py перехватывает admin/login/ до include); без новой зависимости, решение зафиксировано в D-ADR-19; тесты tests/test_login_throttle.py (5 шт). (3) T34: Dockerfile (python:3.12-slim, uv sync --extra prod, не-root пользователь, HEALTHCHECK GET /login/, entrypoint migrate+collectstatic+gunicorn), compose.yaml (web/db postgres:16-alpine/caddy, тома pgdata/staticfiles/media, healthchecks), Caddyfile (TLS, handle_path /static/*, reverse_proxy), .env.example дополнен POSTGRES_*/SITE_ADDRESS/GUNICORN_WORKERS, README — раздел «Деплой» с бэкапом/восстановлением и переносом SQLite→Postgres; gunicorn и psycopg — в optional-dependencies prod (dev-установка не меняется). T31 закрыт той же обвязкой (collectstatic в entrypoint, /static/ раздаёт Caddy).
+
+Команды и фактический вывод: `uv lock` (+psycopg 3.3.9); `uv run python manage.py test tests` → OK (88 тестов); `docker build` → OK; `docker compose up -d` → web (healthy), db (healthy), caddy; seed внутри контейнера; curl -k https://localhost: login 200, POST-вход 302, страницы / /schedule/ /grades/ /requests/ /profile/ /notifications/ → 200, /static/css/base.css → 200 (после исправления handle → handle_path), /media/... → 404 (личные файлы наружу не отдаются); POST новой справки через Caddy → 302, заявка переживает restart web (том pgdata); `docker compose down` после проверки (тома сохранены).
+
+Ограничения: деплой на VPS и проверка из РФ не выполнялись (A05, D-Q09/D-Q10 — за уполномоченным участником); 500.html не вызывался реальным сбоем (стандартный механизм Django); троттлинг на LocMem-кэше действует в пределах воркера — при горизонтальном масштабировании нужен общий кэш (записано в D-ADR-19); браузерный прогон 360 px в этом проходе не повторялся (скриншоты T26 в evidence).
+Стоимость: неизвестно. Ручные действия: нет.
