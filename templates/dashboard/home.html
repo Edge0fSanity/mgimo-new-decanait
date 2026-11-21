@@ -31,7 +31,7 @@
         </div>
         <div class="class-information">
           <p class="class-subject">{{ e.subject }}</p>
-          <p class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span></p>
+          <p class="class-place"><strong>{{ e.room }}</strong> <span>{{ e.teacher }}</span> <a href="{% url 'campus_map' %}">карта</a></p>
         </div>
       </div>
       {% include "academics/_schedule_change.html" with entry=e only %}

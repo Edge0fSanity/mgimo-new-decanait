@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import StudentProfile
+
 from apps.academics.models import Deadline, ScheduleEntry, Subject, VacationPeriod
 from apps.academics.views import exam_percent_needed
 from apps.communications.models import Announcement, Notification
@@ -88,3 +89,10 @@ def home(request):
             "vacation_days_left": vacation_days_left,
         },
     )
+
+
+@login_required
+def map(request):
+    """Статичная схема корпуса (ревью п.15); страница общая, персональных данных нет."""
+    get_object_or_404(StudentProfile, user=request.user)
+    return render(request, "dashboard/map.html")

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Условная схема корпуса: этажи с 1-го по 4-й">
+  <style>
+    .floor { fill: #eef2f7; stroke: #94a3b8; stroke-width: 1.5; }
+    .room { fill: #ffffff; stroke: #94a3b8; stroke-width: 1; }
+    .label { font: 13px system-ui, sans-serif; fill: #334155; }
+    .floor-label { font: bold 14px system-ui, sans-serif; fill: #1e3a5f; }
+  </style>
+  <text x="16" y="24" class="floor-label">Схема корпуса (условная, данные вымышлены)</text>
+  <!-- 4 этаж -->
+  <g>
+    <rect x="16" y="40" width="608" height="90" class="floor"/>
+    <text x="24" y="60" class="floor-label">4 этаж</text>
+    <rect x="90" y="52" width="110" height="66" class="room"/><text x="120" y="90" class="label">Ауд. 401</text>
+    <rect x="220" y="52" width="110" height="66" class="room"/><text x="250" y="90" class="label">Ауд. 405</text>
+    <rect x="350" y="52" width="110" height="66" class="room"/><text x="380" y="90" class="label">Ауд. 410</text>
+  </g>
+  <!-- 3 этаж -->
+  <g>
+    <rect x="16" y="140" width="608" height="90" class="floor"/>
+    <text x="24" y="160" class="floor-label">3 этаж</text>
+    <rect x="90" y="152" width="110" height="66" class="room"/><text x="120" y="190" class="label">Ауд. 301</text>
+    <rect x="220" y="152" width="110" height="66" class="room"/><text x="250" y="190" class="label">Ауд. 305</text>
+    <rect x="350" y="152" width="110" height="66" class="room"/><text x="380" y="190" class="label">Ауд. 312</text>
+  </g>
+  <!-- 2 этаж -->
+  <g>
+    <rect x="16" y="240" width="608" height="90" class="floor"/>
+    <text x="24" y="260" class="floor-label">2 этаж</text>
+    <rect x="90" y="252" width="110" height="66" class="room"/><text x="120" y="290" class="label">Ауд. 205</text>
+    <rect x="220" y="252" width="110" height="66" class="room"/><text x="250" y="290" class="label">Ауд. 210</text>
+    <rect x="350" y="252" width="110" height="66" class="room"/><text x="380" y="290" class="label">Ауд. 213</text>
+  </g>
+  <!-- 1 этаж -->
+  <g>
+    <rect x="16" y="340" width="608" height="90" class="floor"/>
+    <text x="24" y="360" class="floor-label">1 этаж</text>
+    <rect x="90" y="352" width="110" height="66" class="room"/><text x="112" y="390" class="label">Ауд. 112</text>
+    <rect x="220" y="352" width="110" height="66" class="room"/><text x="242" y="390" class="label">Ауд. 118</text>
+    <rect x="350" y="352" width="150" height="66" class="room"/><text x="380" y="390" class="label">Вход, гардероб</text>
+  </g>
+</svg>
