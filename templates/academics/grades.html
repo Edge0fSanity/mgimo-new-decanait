@@ -11,19 +11,17 @@
   <a href="{% url 'deadlines' %}">Дедлайны</a>
   <a href="{% url 'free_rooms' %}">Аудитории</a>
 </nav>
-{% if summary %}
 <div class="entry summary-card grades-summary">
-  <h2>Сводка семестра</h2>
-  <div class="grades-summary-hero">
-    <span class="grades-summary-percent">{{ summary.percent }}%</span>
-    <span class="grades-summary-mark">{{ summary.mark }}</span>
-  </div>
+  <h2>Сводка учёбы</h2>
   <div class="grades-summary-stats">
-    <div><span class="grades-summary-num">{{ summary.subjects }}</span><span class="meta">дисциплин</span></div>
-    <div><span class="grades-summary-num{% if summary.debts %} grades-summary-debts{% endif %}">{{ summary.debts }}</span><span class="meta">задолженности</span></div>
+    <div><span class="grades-summary-num">{{ study.recorded }}</span><span class="meta">выставленных оценок</span></div>
+    <div><span class="grades-summary-num">{{ study.credits }}</span><span class="meta">зачётов</span></div>
+    <div><span class="grades-summary-num{% if study.debts %} grades-summary-debts{% endif %}">{{ study.debts }}</span><span class="meta">задолженностей</span></div>
   </div>
+  {% if study.next_exam %}
+  <p class="meta">Ближайший экзамен: <a href="{% url 'exams' %}">{{ study.next_exam.subject }}</a> — <time datetime="{{ study.next_exam.scheduled_at|date:'c' }}">{{ study.next_exam.scheduled_at|date:"j E, H:i" }}</time></p>
+  {% endif %}
 </div>
-{% endif %}
 {% if cards %}
 <ul class="entries">
   {% for c in cards %}
@@ -51,10 +49,8 @@
       </form>
       {% endif %}
     {% endif %}
-    {% if c.rating %}
-    <span class="meta">{{ c.rating }}% · {{ c.rating_mark }}{% if not c.rating_final %}{% if c.missing_count %} · не внесено оценок — {{ c.missing_count }} (пустая клетка не считается нулём){% endif %}{% endif %}</span>
-    {% elif c.current_avg %}
-    <span class="meta">Текущий контроль: {{ c.current_avg }}% · схема оценивания не задана</span>
+    {% if c.elements %}
+    <span class="meta">Текущий контроль: внесено {{ c.entered_count }} из {{ c.elements|length }}{% if c.missing_count %} (пустая клетка не считается нулём){% endif %}</span>
     {% endif %}
     {% if c.grade.source_label %}<span class="meta">{{ c.grade.source_label }}</span>{% endif %}
     <span class="meta">обновлено {% if c.grade.updated_at|timesince %}{{ c.grade.updated_at|timesince }} назад{% else %}{{ c.grade.updated_at|date:"d.m.Y H:i" }}{% endif %}</span>

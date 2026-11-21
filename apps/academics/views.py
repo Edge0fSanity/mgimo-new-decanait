@@ -41,6 +41,22 @@ def _rating(subject, current_avg, exam_percent):
     return base + float(subject.weight_exam) * exam_percent, True
 
 
+def study_summary(profile, now):
+    """Фактические данные учёбы без вычисленного рейтинга: оценки, зачёты, долги, экзамен."""
+    grades = profile.grades
+    return {
+        "recorded": grades.filter(status=Grade.Status.RECORDED).count(),
+        "credits": grades.filter(status=Grade.Status.CREDIT).count(),
+        "debts": grades.filter(status=Grade.Status.DEBT).count(),
+        "next_exam": (
+            profile.exams.filter(scheduled_at__gte=now)
+            .select_related("subject")
+            .order_by("scheduled_at")
+            .first()
+        ),
+    }
+
+
 def _student_entries(profile, start, end):
     """Занятия основной группы плюс занятия языковой группы студента."""
     return (
@@ -190,44 +206,25 @@ def grades(request):
     exams_by_subject = {}
     for exam in profile.exams.order_by("scheduled_at"):
         exams_by_subject.setdefault(exam.subject_id, exam)
-    cards, ratings, debts = [], [], 0
+    cards = []
     for grade in by_subject.values():
         subject = grade.subject
         elements = list(subject.control_elements.all())
-        entered = [float(e.percent) for e in elements if e.percent is not None]
-        current_avg = _avg(entered)
-        exam_percent = float(grade.percent) if grade.percent is not None else None
-        rating = _rating(subject, current_avg, exam_percent)
-        if rating:
-            ratings.append(rating[0])
-        if grade.status == Grade.Status.DEBT:
-            debts += 1
+        entered_count = sum(1 for e in elements if e.percent is not None)
         cards.append(
             {
                 "grade": grade,
                 "subject": subject,
                 "exam": exams_by_subject.get(subject.pk),
                 "elements": elements,
-                "current_avg": round(current_avg) if current_avg is not None else None,
-                "missing_count": len(elements) - len(entered),
-                "rating": round(rating[0]) if rating else None,
-                "rating_final": rating[1] if rating else False,
-                "rating_mark": percent_to_mark(rating[0]) if rating else None,
+                "entered_count": entered_count,
+                "missing_count": len(elements) - entered_count,
             }
         )
-    summary = None
-    if ratings:
-        avg = sum(ratings) / len(ratings)
-        summary = {
-            "percent": round(avg),
-            "mark": percent_to_mark(avg),
-            "subjects": len(by_subject),
-            "debts": debts,
-        }
     return render(
         request,
         "academics/grades.html",
-        {"cards": cards, "summary": summary, "profile": profile},
+        {"cards": cards, "study": study_summary(profile, timezone.now()), "profile": profile},
     )
 
 
@@ -280,6 +277,7 @@ def subject_detail(request, pk):
             "current_avg": round(current_avg) if current_avg is not None else None,
             "missing_count": len(elements) - len(entered),
             "weights_set": weights_set,
+            "exam_passed": bool(grade and grade.percent is not None),
             "targets": targets,
             "slider": slider,
             "profile": profile,

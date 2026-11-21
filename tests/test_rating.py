@@ -2,6 +2,7 @@
 import os
 from unittest import mock
 
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import SimpleTestCase
 from django.urls import reverse
@@ -86,8 +87,16 @@ class CalculatorTests(CalculatorBase):
     def test_slider_computes_final(self):
         client = self.login(self.user_a)
         page = client.get(reverse("subject_detail", args=[self.subject.pk]), {"n": "80"})
-        # 44 + 0.5*80 = 84 => хорошо.
-        self.assertContains(page, "Итог будет: 84% · хорошо")
+        # 44 + 0.5*80 = 84 => хорошо; ярлык — только как гипотетический расчёт.
+        self.assertContains(page, "При 80% на экзамене: 84% · хорошо (гипотетический расчёт)")
+
+    def test_calculator_shows_assumptions(self):
+        client = self.login(self.user_a)
+        page = client.get(reverse("subject_detail", args=[self.subject.pk]))
+        self.assertContains(page, "Расчёт при заданных баллах")
+        self.assertContains(page, "Текущий контроль — общий по дисциплине")
+        self.assertContains(page, "Социальный блок считается зачтённым (100%)")
+        self.assertContains(page, "Экзамен ещё не сдан — расчёт гипотетический")
 
     def test_idor_other_students_subject_404(self):
         client = self.login(self.user_a)
@@ -102,11 +111,15 @@ class GradesSummaryTests(CalculatorBase):
     def test_summary_and_card_states(self):
         client = self.login(self.user_a)
         page = client.get(reverse("grades"))
-        self.assertContains(page, "Сводка семестра")
-        self.assertContains(page, "grades-summary-percent")
-        self.assertContains(page, "не внесено оценок — 1")
-        self.assertNotContains(page, "прогноз")
+        self.assertContains(page, "Сводка учёбы")
+        self.assertContains(page, "выставленных оценок")
         self.assertContains(page, "Зачёт получен")
+        # Процентно-оценочный ярлык из неполного расчёта не показывается.
+        self.assertNotContains(page, "grades-summary-percent")
+        self.assertNotContains(page, "· отлично")
+        # Карточка дисциплины: только фактические данные (внесено 1 из 2 элементов).
+        self.assertContains(page, "Текущий контроль: внесено 1 из 2")
+        self.assertNotContains(page, "Рейтинговый предмет 85%")
 
 
 class SeedRatingTests(BaseTestCase):
@@ -128,3 +141,29 @@ class SeedRatingTests(BaseTestCase):
         self.assertTrue(
             CurrentControlElement.objects.filter(subject__title="Математический анализ", percent__isnull=True).exists()
         )
+
+
+class TwoStudentsGradesTests(BaseTestCase):
+    def test_two_students_see_different_recorded_grades(self):
+        # Seed: у demo_a по «Микроэкономике» 5, у demo_b — 4 (одна дисциплина).
+        env = {
+            "DEMO_STUDENT_A_PASSWORD": TEST_PASSWORD,
+            "DEMO_STUDENT_B_PASSWORD": TEST_PASSWORD,
+            "DEMO_STAFF_PASSWORD": TEST_PASSWORD,
+        }
+        with mock.patch.dict(os.environ, env):
+            call_command("seed_demo", verbosity=0)
+        user_model = get_user_model()
+        user_a = user_model.objects.get(username="demo_a")
+        user_b = user_model.objects.get(username="demo_b")
+        page_a = self.login(user_a).get(reverse("grades"))
+        self.assertContains(page_a, "Оценка 5 (итог)")
+        page_b = self.login(user_b).get(reverse("grades"))
+        self.assertContains(page_b, "Оценка 4 (итог)")
+        self.assertNotContains(page_b, "Оценка 5 (итог)")
+        # Ни у одного на учёбе и главной нет процентно-оценочного ярлыка из неполного расчёта.
+        for page in (page_a, page_b):
+            self.assertNotContains(page, "grades-summary-percent")
+            self.assertNotContains(page, "· отлично")
+        self.assertNotContains(self.login(user_a).get(reverse("home")), "summary-percent")
+        self.assertNotContains(self.login(user_b).get(reverse("home")), "summary-percent")
