@@ -101,6 +101,7 @@ a { color: var(--accent); text-underline-offset: .18em; }
 }
 .bell { min-width: 44px; }
 .disclaimer { margin-block: .6rem 0; font-size: .75rem; line-height: 1.4; color: var(--muted); }
+.vacation-banner { margin-block: .75rem 0; padding: .65rem .9rem; background: var(--tint); border-radius: 10px; font-weight: 600; }
 
 h1 { font-size: clamp(1.65rem, 3vw, 2.3rem); color: var(--ink); margin: 1rem 0 .65rem; line-height: 1.16; }
 h2 { font-size: 1.125rem; line-height: 1.3; }

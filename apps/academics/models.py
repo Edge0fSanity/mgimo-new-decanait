@@ -105,6 +105,26 @@ class Room(models.Model):
         return self.name
 
 
+class VacationPeriod(models.Model):
+    """Каникулы; даты из приказа вводятся через admin (ревью п.17–18)."""
+
+    title = models.CharField("Название", max_length=120)
+    starts_at = models.DateField("Начало")
+    ends_at = models.DateField("Конец")
+
+    class Meta:
+        verbose_name = "Каникулы"
+        verbose_name_plural = "Каникулы"
+        ordering = ["starts_at"]
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        if self.starts_at and self.ends_at and self.ends_at < self.starts_at:
+            raise ValidationError("Конец каникул не может быть раньше начала")
+
+
 class ScheduleEntry(models.Model):
     """Занятие. language_group пуст => занятие всей основной группы."""
 

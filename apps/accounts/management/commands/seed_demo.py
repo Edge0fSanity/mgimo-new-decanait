@@ -9,7 +9,7 @@ DEMO_STUDENT_B_PASSWORD; если не заданы — генерируются
 """
 import os
 import secrets
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
@@ -29,6 +29,7 @@ from apps.academics.models import (
     Room,
     ScheduleEntry,
     Subject,
+    VacationPeriod,
 )
 from apps.communications.models import Announcement, Notification
 from apps.requests_app.models import DemoDocument, RequestStatusEvent, StudentRequest
@@ -146,6 +147,24 @@ class Command(BaseCommand):
         # Справочник аудиторий корпуса (ревью п.14): те же, что в плане расписания.
         for room in ["Ауд. 301", "Ауд. 112", "Ауд. 118", "Ауд. 205", "Ауд. 401", "Ауд. 210"]:
             Room.objects.get_or_create(name=room)
+
+        # Каникулы (ревью п.17–18): демо-период рядом с «сегодня», чтобы баннер
+        # напоминания был виден (при повторном seed поднимается, как дедлайны),
+        # плюс зимние/летние по образцу памятки для иностранных студентов МГИМО —
+        # заменить датами приказа.
+        today = timezone.localdate()
+        VacationPeriod.objects.update_or_create(
+            title="Каникулы (демо)",
+            defaults={"starts_at": today + timedelta(days=5), "ends_at": today + timedelta(days=12)},
+        )
+        VacationPeriod.objects.get_or_create(
+            title="Зимние каникулы 2026/27",
+            defaults={"starts_at": date(2027, 1, 26), "ends_at": date(2027, 2, 6)},
+        )
+        VacationPeriod.objects.get_or_create(
+            title="Летние каникулы 2027",
+            defaults={"starts_at": date(2027, 6, 25), "ends_at": date(2027, 8, 31)},
+        )
 
         # Расписание текущей недели (Пн..Пт): общие пары + пары языковых групп.
         now = timezone.localtime()
@@ -306,6 +325,7 @@ class Command(BaseCommand):
                     "view_studentrequest", "change_studentrequest",
                     "add_announcement", "change_announcement", "view_announcement",
                     "add_deadline", "change_deadline", "view_deadline",
+                    "add_vacationperiod", "change_vacationperiod", "view_vacationperiod",
                     "add_group", "change_group", "view_group",
                     "add_subject", "change_subject", "view_subject",
                     "add_scheduleentry", "change_scheduleentry", "view_scheduleentry",
