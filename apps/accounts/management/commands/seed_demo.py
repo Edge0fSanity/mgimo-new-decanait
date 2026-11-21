@@ -60,10 +60,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         # Код в формате МГИМО «<курс><факультет>-<академическая>-<языковая>» (ревью п.2);
-        # старый демо-код «МЭО-01» переименовывается при повторном seed.
-        Group.objects.filter(code="МЭО-01").update(
-            code="1МЭО-01-01", title="Международные экономические отношения, 1 курс"
-        )
+        # старый демо-код «МЭО-01» переименовывается при повторном seed, но только
+        # если новый код ещё не занят — иначе UNIQUE constraint роняет весь seed.
+        if not Group.objects.filter(code="1МЭО-01-01").exists():
+            Group.objects.filter(code="МЭО-01").update(
+                code="1МЭО-01-01", title="Международные экономические отношения, 1 курс"
+            )
         group, _ = Group.objects.get_or_create(
             code="1МЭО-01-01", defaults={"title": "Международные экономические отношения, 1 курс"}
         )

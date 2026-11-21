@@ -1,7 +1,8 @@
 """Тесты ревью п.17–18 (T52/T53): каникулы — блок на главной и баннер за неделю."""
-from datetime import date, timedelta
+from datetime import timedelta
 
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.academics.models import VacationPeriod
 
@@ -10,7 +11,7 @@ from .base import BaseTestCase
 
 class VacationTests(BaseTestCase):
     def add(self, start_offset, title="Каникулы"):
-        today = date.today()
+        today = timezone.localdate()
         return VacationPeriod.objects.create(
             title=title, starts_at=today + timedelta(days=start_offset), ends_at=today + timedelta(days=start_offset + 7)
         )
