@@ -395,6 +395,7 @@ class Command(BaseCommand):
                     "add_grade", "change_grade", "view_grade",
                     "add_exam", "change_exam", "view_exam",
                     "add_currentcontrolelement", "change_currentcontrolelement", "view_currentcontrolelement",
+                    "add_maintenancerequest", "change_maintenancerequest", "view_maintenancerequest",
                     "view_studentprofile", "change_studentprofile",
                 ]
             )
