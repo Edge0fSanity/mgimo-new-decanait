@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load tz %}
+{% block title %}Преподаватели — Деканат{% endblock %}
+{% block content %}
+{% timezone "Europe/Moscow" %}
+<h1>Преподаватели</h1>
+<form method="get" class="student-form">
+  <div class="form-field">
+    <label for="id_q">Фамилия преподавателя</label>
+    <input type="search" id="id_q" name="q" value="{{ query }}">
+  </div>
+  <button type="submit" class="button">Найти</button>
+</form>
+{% if query %}
+  {% if names %}
+  <ul class="entries">
+    {% for name in names %}
+    <li class="entry"><a href="?teacher={{ name|urlencode }}&amp;q={{ query|urlencode }}">{{ name }}</a></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Преподаватели не найдены</p>
+  {% endif %}
+{% endif %}
+{% if selected %}
+  <h2>{{ selected }} — ближайшие занятия</h2>
+  <ul class="entries">
+    {% for e in entries %}
+    <li class="entry">
+      <span class="time">{{ e.starts_at|date:"d.m" }} {{ e.starts_at|date:"H:i" }}–{{ e.ends_at|date:"H:i" }}</span>
+      <span class="subject">{{ e.subject }}</span>
+      <span class="meta">{{ e.room }} · {{ e.group.code }}</span>
+    </li>
+    {% empty %}
+    <li class="entry"><span class="meta">Ближайших занятий нет</span></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endtimezone %}
+{% endblock %}

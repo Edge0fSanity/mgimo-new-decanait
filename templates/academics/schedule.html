@@ -23,7 +23,7 @@
         <li class="entry{% if e.old_starts_at or e.old_room %} rescheduled{% endif %}" data-starts-at="{{ e.starts_at|date:'c' }}" data-ends-at="{{ e.ends_at|date:'c' }}">
           <span class="time">{{ e.starts_at|date:"H:i" }}–{{ e.ends_at|date:"H:i" }}</span>
           <span class="subject">{{ e.subject }}</span>
-          <span class="meta">{{ e.room }} · {{ e.teacher }}</span>
+          <span class="meta">{{ e.room }} · <a href="{% url 'teachers' %}?teacher={{ e.teacher|urlencode }}">{{ e.teacher }}</a></span>
           {% if e.homework %}
           <span class="meta">Задание: {{ e.homework }}</span>
           <form method="post" action="{% url 'homework_deadline' e.pk %}">

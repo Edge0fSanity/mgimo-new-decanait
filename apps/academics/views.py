@@ -112,6 +112,35 @@ def schedule(request):
 
 
 @login_required
+def teachers(request):
+    """Поиск преподавателя по фамилии и его ближайшие занятия (ревью п.11)."""
+    get_object_or_404(StudentProfile, user=request.user)
+    query = request.GET.get("q", "").strip()
+    selected = request.GET.get("teacher", "").strip()
+    names, entries = [], []
+    if query:
+        names = list(
+            ScheduleEntry.objects.filter(teacher__icontains=query)
+            .values_list("teacher", flat=True)
+            .distinct()
+            .order_by("teacher")
+        )
+    if selected:
+        moscow = ZoneInfo("Europe/Moscow")
+        start = datetime.combine(timezone.localdate(timezone=moscow), time.min, moscow)
+        entries = (
+            ScheduleEntry.objects.filter(teacher=selected, starts_at__gte=start)
+            .select_related("subject", "group")
+            .order_by("starts_at")[:20]
+        )
+    return render(
+        request,
+        "academics/teachers.html",
+        {"query": query, "names": names, "selected": selected, "entries": entries},
+    )
+
+
+@login_required
 def grades(request):
     profile = get_object_or_404(StudentProfile, user=request.user)
     # Несколько строк на дисциплину (аттестация + сессия): для карточки берём последнюю.
