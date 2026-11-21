@@ -124,7 +124,10 @@ class MaintenanceRequest(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="maintenance_requests"
     )
     room = models.ForeignKey(
-        "academics.Room", on_delete=models.PROTECT, related_name="maintenance_requests"
+        "academics.Room",
+        verbose_name="Аудитория",
+        on_delete=models.PROTECT,
+        related_name="maintenance_requests",
     )
     category = models.CharField("Что не работает", max_length=16, choices=Category.choices)
     description = models.TextField("Описание")
