@@ -25,7 +25,7 @@ class AuthTests(BaseTestCase):
         strict = self.client_class(enforce_csrf_checks=True)
         response = strict.post(reverse("login"), {"username": self.user_a.username, "password": TEST_PASSWORD})
         self.assertEqual(response.status_code, 403)
-        strict.login(username=self.user_a.username, password=TEST_PASSWORD)
+        strict.force_login(self.user_a)
         response = strict.post(reverse("request_create"), {"type": "certificate", "purpose": "X"})
         self.assertEqual(response.status_code, 403)
 

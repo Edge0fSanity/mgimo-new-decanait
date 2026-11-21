@@ -17,14 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-from apps.accounts.views import login_throttle
+from axes.decorators import axes_dispatch
 
 admin.site.site_title = "Цифровой деканат — служебный интерфейс"
 admin.site.site_header = "Цифровой деканат — служебный интерфейс"
 
 urlpatterns = [
-    # Троттлинг на обе формы входа (чек-лист A05): /admin/login/ отдельно от include.
-    path("admin/login/", login_throttle(admin.site.login)),
+    # django-axes на обе формы входа (чек-лист A05): /admin/login/ отдельно от include.
+    path("admin/login/", axes_dispatch(admin.site.login)),
     path('admin/', admin.site.urls),
     path("", include("apps.accounts.urls")),
     path("", include("apps.dashboard.urls")),

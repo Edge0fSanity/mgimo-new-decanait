@@ -27,6 +27,7 @@ class BaseTestCase(TestCase):
         cls.user_b = make_student("student_b", "Петров Борис", "EN-2", "Международные финансы")
 
     def login(self, user):
+        # force_login: axes требует request в authenticate(), client.login() его не передаёт.
         client = self.client
-        self.assertTrue(client.login(username=user.username, password=TEST_PASSWORD))
+        client.force_login(user)
         return client

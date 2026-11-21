@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "axes",
     "apps.accounts",
     "apps.academics",
     "apps.requests_app",
@@ -37,7 +38,21 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
+
+# django-axes (D-ADR-19): блокировка после неудачных попыток входа; попытки в БД,
+# действуют между перезапусками и воркерами. Успешный вход сбрасывает счётчик.
+# ["ip_address", "username"] — один комбинированный параметр: блокируется пара
+# IP+логин, другие логины с того же IP не затрагиваются.
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # часы
+AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+AXES_RESET_ON_SUCCESS = True
 
 ROOT_URLCONF = "config.urls"
 
