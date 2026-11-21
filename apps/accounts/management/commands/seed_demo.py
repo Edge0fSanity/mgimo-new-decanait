@@ -151,6 +151,11 @@ class Command(BaseCommand):
                     entry.change_source_role = "Деканат"
                     entry.changed_at = timezone.now()
                     entry.save()
+                # Демо-задание у перенесённой пары: без него фича
+                # «Добавить в дедлайны» (T23) в демо не видна.
+                if week_offset == 0 and lang == "EN-1" and day == 3 and not entry.homework:
+                    entry.homework = "Подготовить эссе по теме занятия"
+                    entry.save(update_fields=["homework"])
         self.stdout.write("Расписание двух недель готово")
 
         # Одна демо-заявка у A, только если у него ещё нет ни одной.
