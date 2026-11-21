@@ -54,3 +54,38 @@
 Не принято как отдельные задачи (осознанно): проверка формулы 0,4/0,5/0,1 по тексту положения (вне прототипа — веса храним как данные, T15), отдельный раздел «Задания» (T23 — минимум), свободное редактирование студентом учебных данных (T21 — заявка об ошибке вместо этого).
 
 Статус: T15–T24, T26 выполнены 21.11.2026 (PROMPT_LOG D-P009); T25 выполнен с заглушкой фото корпуса (заменить сжатым фото перед релизом, A05).
+
+# Ревью производительности — план внедрения (21.11.2026)
+
+Источник: ревью кода на предмет нагрузки (замер числа SQL-запросов на seed-данных: home 11, grades 12, schedule 6). DDoS-защита — на хостере, здесь только производительность. Порядок = приоритет: сначала то, что даёт ёмкость (БД), затем дешёвые точечные фиксы, затем кэш. Все задачи TODO.
+
+| № | Задача | Где | Решение |
+|---|---|---|---|
+| T27 | SQLite — главный потолок конкурентной записи: сессии в БД пишутся на каждый запрос, при пиках запросы выстраиваются в очередь. | config/settings.py:62-66, 84 | DATABASES из env (DJANGO_DB_ENGINE, по умолчанию sqlite3 — тесты не трогаем); прод — PostgreSQL. Миграция данных: manage.py dumpdata → loaddata (объёмы малые). ADR-запись о выборе. |
+| T28 | N+1 в grades: на каждую дисциплину отдельные запросы control_elements и exam (замер: 2N+4 запросов, ~24 при 10 дисциплинах). Тот же паттерн в _rating_hint. | apps/academics/views.py:119-147, apps/dashboard/views.py:28-33 | prefetch_related("control_elements") на subjects; экзамены одним запросом select_related("subject") + словарь {subject_id: exam}. Проверка: число запросов grades не растёт с числом дисциплин. |
+| T29 | Нет индексов под основные фильтры: расписание (group + starts_at), дедлайны (group/student + due_at), уведомления (recipient + read_at). | apps/academics/models.py (Meta ScheduleEntry, Deadline), apps/communications/models.py (Meta Notification) | models.Index: ScheduleEntry(group, starts_at); Deadline(group, due_at) и (student, due_at); Notification(recipient, read_at). Одна миграция. |
+| T30 | Списки без пагинации: заявки, уведомления, архив объявлений копятся годами. | apps/requests_app/views.py:20, apps/communications/views.py:13, 46 | Стандартный Paginator, 20 на страницу + ссылки назад/вперёд в шаблонах. |
+| T31 | Статика раздаётся Django: каждый CSS/JS занимает воркер Python. | config/settings.py, README (чек-лист A05) | collectstatic при деплое + раздача прокси/хостером; если хостер не умеет — WhiteNoise (без новой инфраструктуры). |
+| T32 | Кэш персональных блоков главной: объявления и ближайший дедлайн почти не меняются, но считаются на каждый вход. | templates/dashboard/home.html, apps/dashboard/views.py | После T27: {% cache %} фрагмента объявлений по группе, TTL 5–10 мин. Full-page cache не подходит (страницы персональные). |
+| T33 | Прод-сервер и упаковка: runserver не для прода; деплой A05 ещё без Docker. | Dockerfile, compose.yaml (новые), README | gunicorn (несколько воркеров) + docker compose: web + postgres + Caddy (reverse proxy, уже упомянут в A05). Rate limiting /login/ и /admin/login/ — на уровне Caddy или django-axes, остаётся в A05. |
+| T34 | Продумать и создать docker-обвязку: Dockerfile + compose.yaml + переменные окружения + процедура деплоя. | Dockerfile, compose.yaml, .env.example, README, docs/ADR.md | Состав стека (см. ниже). Все секреты — env, в git не попадают (.env в .gitignore). ADR-запись: выбор compose, состав сервисов, отказ от Kubernetes/Redis на старте. |
+
+### T34 — продуманный состав docker-обвязки (решение до написания кода)
+
+Сервисы compose (3):
+
+- web — образ на базе python:3.12-slim, uv sync, gunicorn config.wsgi (воркеров 2×CPU+1, старт с 3), entrypoint: migrate + collectstatic + gunicorn. HEALTHCHECK — GET /login/ (страница с сессией, но без обращения к бизнес-таблицам): считать живым ответ 200/302, 500 — нет.
+- db — postgres:16-alpine, том для данных, healthcheck pg_isready, web зависит от db с condition: service_healthy. Имя БД/пользователь/пароль — из env.
+- caddy — caddy:2-alpine, порты 80/443, reverse_proxy на web, автоматический TLS от Let's Encrypt, раздача /static/ из общего тома (collectstatic пишет в STATIC_ROOT, смонтированный в оба контейнера), rate_limit на /login/ и /admin/login/ (модуль caddy-ratelimit или limit_req-аналог; если модуль неудобен — django-axes, решение зафиксировать в ADR).
+
+Тома: postgres-data, staticfiles, media. Сеть внутренняя, наружу открыты только 80/443 у caddy.
+
+Переменные окружения (расширить существующий .env.example): DJANGO_SECRET_KEY, DJANGO_DEBUG=False, DJANGO_ALLOWED_HOSTS, DJANGO_CSRF_TRUSTED_ORIGINS, DJANGO_DB_ENGINE=django.db.backends.postgresql, POSTGRES_DB/USER/PASSWORD, DJANGO_SESSION_COOKIE_SECURE=True, DJANGO_TRUST_PROXY_SSL=True (Caddy — свой прокси, заголовку можно верить).
+
+Процедура деплоя (в README): docker compose up -d → миграции применяются entrypoint'ом web → проверка /login/ и /admin/. Обновление: git pull → docker compose build → up -d (откат = предыдущий образ). Миграция данных SQLite → Postgres (T27): dumpdata на старом стеке → loaddata в контейнере db.
+
+Порядок внедрения: T34 после T27 (Postgres в settings), иначе compose соберётся вокруг SQLite. Проверка: compose up на локальной машине, два аккаунта, логин/заявка/расписание работают через Caddy на https (самоподписанный для локальной проверки).
+
+Не принято (осознанно): full-page cache (персональные данные), Redis как отдельный сервис на старте (кэш LocMem достаточен для одного инстанса, переоценить при горизонтальном масштабировании), CDN (аудитория РФ, один вуз), микросервисы, Kubernetes (один инстанс, оркестрация не нужна).
+
+Статус: TODO. T27–T28 — первый срез; T31, T33, T34 — в объём A05.
