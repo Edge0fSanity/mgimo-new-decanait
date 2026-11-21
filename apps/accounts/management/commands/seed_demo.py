@@ -87,16 +87,16 @@ class Command(BaseCommand):
             )
 
         specs = [
-            ("demo_a", "Иванова Анна", "МЭО", "Международные экономические отношения", 1, "EN-1", "Мировая экономика"),
-            ("demo_b", "Петров Борис", "МЭО", "Международные экономические отношения", 1, "EN-2", "Международные финансы"),
+            ("demo_a", "Иванова Анна Сергеевна", "МЭО", "Международные экономические отношения", 1, "EN-1", "Мировая экономика"),
+            ("demo_b", "Петров Борис Игоревич", "МЭО", "Международные экономические отношения", 1, "EN-2", "Международные финансы"),
         ]
         users = {}
         for username, name, faculty, program, year, lang, spec in specs:
             user, created = User.objects.get_or_create(username=username)
             if created:
                 user.set_password(_password(f"DEMO_STUDENT_{username[-1].upper()}_PASSWORD", username))
-                user.first_name = name.split()[0]
-                user.last_name = name.split()[1]
+                user.first_name = name.split()[1]
+                user.last_name = name.split()[0]
                 user.save()
             StudentProfile.objects.update_or_create(
                 user=user,
