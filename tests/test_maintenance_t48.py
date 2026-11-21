@@ -16,7 +16,7 @@ class MaintenanceTests(BaseTestCase):
     def test_page_shows_form_and_empty_list(self):
         client = self.login(self.user_a)
         page = client.get(reverse("maintenance"))
-        self.assertContains(page, "Обслуживание кабинетов")
+        self.assertContains(page, "Сообщить о проблеме в аудитории")
         self.assertContains(page, 'name="room"')
         self.assertContains(page, "Заявок пока нет")
 
@@ -25,8 +25,11 @@ class MaintenanceTests(BaseTestCase):
         response = client.post(
             reverse("maintenance"),
             {"room": self.room.pk, "category": "computer", "description": "Не включается компьютер у окна"},
+            follow=True,
         )
         self.assertRedirects(response, reverse("maintenance"))
+        # Подтверждение видно студенту после редиректа.
+        self.assertContains(response, "Заявка зарегистрирована")
         obj = MaintenanceRequest.objects.get(owner=self.user_a)
         self.assertEqual(obj.room, self.room)
         self.assertEqual(obj.status, MaintenanceRequest.Status.SUBMITTED)
@@ -53,7 +56,11 @@ class MaintenanceTests(BaseTestCase):
         self.assertNotContains(page, "Батарея холодная")
         self.assertContains(page, "Заявок пока нет")
 
-    def test_nav_link_present(self):
+    def test_nav_link_removed_and_action_on_request_list(self):
+        # Пункт «Обслуживание» убран из навигации, действие доступно со страницы заявок.
         client = self.login(self.user_a)
-        page = client.get(reverse("home"))
+        home = client.get(reverse("home"))
+        self.assertNotContains(home, ">Обслуживание</a>")
+        page = client.get(reverse("request_list"))
+        self.assertContains(page, "Сообщить о проблеме в аудитории")
         self.assertContains(page, reverse("maintenance"))

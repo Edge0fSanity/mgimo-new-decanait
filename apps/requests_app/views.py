@@ -133,7 +133,7 @@ def maintenance(request):
             obj.owner = request.user
             obj.status = MaintenanceRequest.Status.SUBMITTED
             obj.save()
-            messages.success(request, "Заявка отправлена в хозяйственный отдел")
+            messages.success(request, "Заявка зарегистрирована")
             return redirect("maintenance")
     else:
         form = MaintenanceForm()
