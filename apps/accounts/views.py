@@ -17,13 +17,20 @@ LOGIN_MAX_PER_IP = 30
 
 
 def login_throttle(view):
-    """Ограничивает частоту POST-попыток входа; GET (показ формы) не считаем."""
+    """Считает только НЕудачные POST-попытки входа; верный пароль проходит и сбрасывает счётчик."""
 
     def wrapped(request, *args, **kwargs):
         if request.method != "POST":
             return view(request, *args, **kwargs)
         ip = request.META.get("REMOTE_ADDR", "")
         username = request.POST.get("username", "")[:150]
+        session_key_before = request.session.session_key
+        response = view(request, *args, **kwargs)
+        if request.session.session_key != session_key_before and request.session.get("_auth_user_id"):
+            # Успешный вход: Django ротирует ключ сессии при login(); попытка не считается.
+            cache.delete(f"login:{ip}:{username}")
+            cache.delete(f"login-ip:{ip}")
+            return response
         per_login_key = f"login:{ip}:{username}"
         per_ip_key = f"login-ip:{ip}"
         for key, limit in ((per_login_key, LOGIN_MAX_PER_LOGIN), (per_ip_key, LOGIN_MAX_PER_IP)):
@@ -34,7 +41,7 @@ def login_throttle(view):
                     "Слишком много попыток входа. Попробуйте через несколько минут.",
                     status=429,
                 )
-        return view(request, *args, **kwargs)
+        return response
 
     return wrapped
 

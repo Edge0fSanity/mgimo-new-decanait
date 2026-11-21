@@ -29,6 +29,18 @@ class LoginThrottleTest(BaseTestCase):
         response = self.post_login("student_a", TEST_PASSWORD)
         self.assertEqual(response.status_code, 302)
 
+    def test_correct_password_after_failures_still_logs_in(self):
+        # Считаются только неудачные попытки: верный пароль проходит и сбрасывает счётчик.
+        for _ in range(5):
+            self.post_login("student_a", "wrong-password")
+        response = self.post_login("student_a", TEST_PASSWORD)
+        self.assertEqual(response.status_code, 302)
+        # После сброса снова 5 неудачных попыток до блокировки.
+        for _ in range(5):
+            response = self.post_login("student_a", "wrong-password")
+            self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.post_login("student_a", "wrong-password").status_code, 429)
+
     def test_get_not_counted(self):
         for _ in range(10):
             self.client.get("/login/")
