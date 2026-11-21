@@ -9,7 +9,7 @@ DEMO_STUDENT_B_PASSWORD; если не заданы — генерируются
 """
 import os
 import secrets
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
@@ -228,6 +228,38 @@ class Command(BaseCommand):
                 if week_offset == 0 and lang == "EN-1" and day == 3 and not entry.homework:
                     entry.homework = "Подготовить эссе по теме занятия"
                     entry.save(update_fields=["homework"])
+
+        # Демо-перенос в неделю экспертизы 23–27.11.2026 (ревью P0-2): жюри,
+        # открывшее эту неделю, должно увидеть и бейдж «Перенос», и кнопку
+        # «Добавить в дедлайны». Перенос моделируется строкой, созданной сразу
+        # с финальным starts_at и old_* полями (не правкой существующей пары).
+        # Ловушка: при запуске seed рядом с этой неделей обычный цикл выше уже
+        # создал пару 26.11 15:00 (week_offset=1) — тогда дозаполняем old_*.
+        expertise_starts = datetime(2026, 11, 26, 15, 0)
+        entry, _ = ScheduleEntry.objects.get_or_create(
+            group=group,
+            language_group="EN-1",
+            subject=subjects["Иностранный язык"],
+            starts_at=expertise_starts,
+            defaults={
+                "ends_at": expertise_starts + timedelta(hours=1, minutes=30),
+                "room": "Ауд. 210",
+                "teacher": "Кузнецова Ольга",
+            },
+        )
+        changed = False
+        if not entry.old_starts_at:
+            entry.old_starts_at = expertise_starts - timedelta(hours=2)
+            entry.old_room = "Ауд. 112"
+            entry.change_reason = "Перенос занятия на неделю экспертизы"
+            entry.change_source_role = "Деканат"
+            entry.changed_at = timezone.now()
+            changed = True
+        if not entry.homework:
+            entry.homework = "Подготовить эссе по теме занятия"
+            changed = True
+        if changed:
+            entry.save()
         self.stdout.write("Расписание двух недель готово")
 
         # Одна демо-заявка у A, только если у него ещё нет ни одной.

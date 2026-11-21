@@ -28,6 +28,7 @@
           <span class="meta">Задание: {{ e.homework }}</span>
           <form method="post" action="{% url 'homework_deadline' e.pk %}">
             {% csrf_token %}
+            {% if view == 'week' %}<input type="hidden" name="week_of" value="{{ week_of }}">{% endif %}
             <button type="submit" aria-label="Добавить в дедлайны: {{ e.subject }}">Добавить в дедлайны</button>
           </form>
           {% endif %}
