@@ -39,3 +39,12 @@ class RequestFilterTests(BaseTestCase):
         client = self.login(self.user_a)
         page = client.get(reverse("request_list"), {"type": "certificate", "subtype": "visa"})
         self.assertContains(page, "Заявок по выбранному фильтру нет")
+
+    def test_pagination_keeps_filter(self):
+        for i in range(21):
+            StudentRequest.objects.create(
+                owner=self.user_a, type=StudentRequest.Type.CERTIFICATE, subtype=StudentRequest.Subtype.TAX
+            )
+        client = self.login(self.user_a)
+        page = client.get(reverse("request_list"), {"type": "certificate", "page": 2})
+        self.assertContains(page, "?type=certificate&amp;page=1")
