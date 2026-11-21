@@ -3,6 +3,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+import re
+
+# Код группы МГИМО: «4МЭО-03-21» = 4 курс, факультет МЭО, 3 академическая группа, 21 языковая.
+GROUP_CODE_RE = re.compile(r"^(\d)([А-ЯЁ]+)-(\d{2})-(\d{2})$")
+
 
 class Group(models.Model):
     code = models.CharField("Код группы", max_length=32, unique=True)
@@ -14,6 +19,15 @@ class Group(models.Model):
 
     def __str__(self):
         return self.code
+
+    @property
+    def code_description(self):
+        """«4МЭО-03-21» → «4МЭО-03-21 · 4 курс · академическая 03 · языковая 21»; неразбираемый код — как есть."""
+        m = GROUP_CODE_RE.match(self.code)
+        if not m:
+            return self.code
+        course, _faculty, academic, language = m.groups()
+        return f"{self.code} · {course} курс · академическая {academic} · языковая {language}"
 
 
 class Subject(models.Model):

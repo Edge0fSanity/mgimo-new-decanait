@@ -36,6 +36,18 @@ class ProfileViewTests(BaseTestCase):
         self.user_a.refresh_from_db()
         self.assertEqual(self.user_a.email, "anna@example.com")
 
+    def test_group_code_components(self):
+        # Ревью п.2: код «4МЭО-03-21» = 4 курс МЭО, 3 академическая группа, 21 языковая.
+        from apps.academics.models import Group
+
+        self.assertEqual(
+            Group(code="4МЭО-03-21").code_description,
+            "4МЭО-03-21 · 4 курс · академическая 03 · языковая 21",
+        )
+        self.assertEqual(Group(code="МЭО-01").code_description, "МЭО-01")
+        client = self.login(self.user_a)
+        self.assertContains(client.get(reverse("profile")), "академическая 01")
+
 
 class PasswordChangeTests(BaseTestCase):
     def test_change_password_accessible_and_works(self):

@@ -17,7 +17,7 @@ class ScheduleEntryCleanTests(BaseTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        cls.group = Group.objects.get(code="МЭО-01")
+        cls.group = Group.objects.get(code="1МЭО-01-01")
         cls.subject = Subject.objects.create(title="Тестовый предмет clean")
 
     def test_ends_at_not_before_starts_at(self):
@@ -64,7 +64,7 @@ class DeadlineCleanTests(BaseTestCase):
         self.assertNotIn("due_at", cm.exception.message_dict)
 
     def test_past_due_at_rejected(self):
-        group = Group.objects.get(code="МЭО-01")
+        group = Group.objects.get(code="1МЭО-01-01")
         deadline = Deadline(group=group, title="Прошедший дедлайн", due_at=timezone.now() - timedelta(days=1))
         with self.assertRaises(ValidationError) as cm:
             deadline.full_clean()
@@ -72,7 +72,7 @@ class DeadlineCleanTests(BaseTestCase):
 
     def test_past_due_at_editable_after_creation(self):
         # Истёкший дедлайн staff должен уметь править (опечатка в названии и т.п.).
-        group = Group.objects.get(code="МЭО-01")
+        group = Group.objects.get(code="1МЭО-01-01")
         deadline = Deadline.objects.create(group=group, title="Истёкший", due_at=timezone.now() - timedelta(days=1))
         deadline.title = "Истёкший (исправлено)"
         deadline.full_clean()  # не бросает
@@ -81,7 +81,7 @@ class DeadlineCleanTests(BaseTestCase):
 
 class ScheduleEntryAdminSaveTests(BaseTestCase):
     def test_save_model_fills_transfer_fields_on_change(self):
-        group = Group.objects.get(code="МЭО-01")
+        group = Group.objects.get(code="1МЭО-01-01")
         subject = Subject.objects.create(title="Тестовый предмет переноса")
         entry = ScheduleEntry.objects.create(
             group=group, subject=subject,

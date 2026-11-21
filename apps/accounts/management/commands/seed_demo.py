@@ -56,8 +56,13 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         User = get_user_model()
+        # Код в формате МГИМО «<курс><факультет>-<академическая>-<языковая>» (ревью п.2);
+        # старый демо-код «МЭО-01» переименовывается при повторном seed.
+        Group.objects.filter(code="МЭО-01").update(
+            code="1МЭО-01-01", title="Международные экономические отношения, 1 курс"
+        )
         group, _ = Group.objects.get_or_create(
-            code="МЭО-01", defaults={"title": "Международные экономические отношения, 1 курс"}
+            code="1МЭО-01-01", defaults={"title": "Международные экономические отношения, 1 курс"}
         )
         subjects = {}
         for title in ["Микроэкономика", "Иностранный язык", "История международных отношений", "Математический анализ"]:

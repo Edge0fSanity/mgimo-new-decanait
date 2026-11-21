@@ -165,7 +165,7 @@ class StaffActionTests(A02Base):
 
 class DashboardTests(A02Base):
     def test_home_shows_pair_deadline_request(self):
-        group = Group.objects.get(code="МЭО-01")
+        group = Group.objects.get(code="1МЭО-01-01")
         ScheduleEntry.objects.create(
             group=group, language_group="", subject=self.subject,
             starts_at="2026-12-21T10:00:00+03:00", ends_at="2026-12-21T11:30:00+03:00",
