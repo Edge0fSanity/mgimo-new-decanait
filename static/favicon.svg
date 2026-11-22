@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#a6093d"/>
-  <text x="16" y="23" text-anchor="middle" font-family="Georgia, serif" font-size="19" font-weight="bold" fill="#ffffff">Д</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#213A8F"/>
+  <text x="32" y="42" font-family="Geist, Arial, sans-serif" font-size="34" font-weight="600" fill="#ffffff" text-anchor="middle">М</text>
+  <rect x="0" y="58" width="21.4" height="6" fill="#0086CD"/>
+  <rect x="21.4" y="58" width="21.2" height="6" fill="#ffffff"/>
+  <rect x="42.6" y="58" width="21.4" height="6" fill="#CE1F1C"/>
 </svg>

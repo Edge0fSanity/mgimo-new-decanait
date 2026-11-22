@@ -1,12 +1,13 @@
 :root {
-  --ink: #162039;
-  --accent: #234bc0;
-  --accent-solid: #234bc0;
-  --brand: #a6093d; /* фирменный красный МГИМО (ревью п.7); только бренд-знак, не --accent/--danger */
+  /* палитра прототипа design/kabinet.html (цвета сняты со знака МГИМО) */
+  --ink: #213a8f;
+  --accent: #213a8f; /* одна синяя семья с --ink: ссылки отличает подчёркивание; контраст выше, чем у #0072af */
+  --accent-solid: #213a8f;
+  --brand: #ce1f1c; /* красный триколора; только бренд-знак, не --accent/--danger */
   --line: #d3dce9;
-  --bg: #f3f5fa;
-  --muted: #4c5c73;
-  --danger: #8a242c;
+  --bg: #f2f5f9;
+  --muted: #4a5266;
+  --danger: #ce1f1c;
   --tint: #e9efff;
   --page-width: 67rem;
   --gutter: clamp(1rem, 3vw, 2rem);
@@ -73,16 +74,27 @@ a { color: var(--accent); text-underline-offset: .18em; }
   color: var(--ink);
   text-decoration: none;
 }
-.brand::before {
+/* знак кабинета: плашка-«М» с триколорной полосой (design/kabinet.html .mark--initial) */
+.mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: .82rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+.mark--initial::after {
   content: "";
-  flex: 0 0 1.85rem;
-  height: 1.85rem;
-  border-radius: .55rem;
-  background:
-    linear-gradient(#fff, #fff) 50% 34% / 48% 2px no-repeat,
-    linear-gradient(#fff, #fff) 50% 51% / 48% 2px no-repeat,
-    linear-gradient(#fff, #fff) 38% 68% / 30% 2px no-repeat,
-    var(--brand);
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0086cd 0 33.4%, #ffffff 33.4% 66.7%, #ce1f1c 66.7% 100%);
 }
 .site-nav { display: flex; align-items: center; gap: .125rem; }
 .site-nav a, .bell {
